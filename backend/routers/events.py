@@ -178,7 +178,7 @@ async def resume_timer(fixture_id: int, db: Session = Depends(get_db), current_u
     return {"message": "Timer resumed"}
 
 @router.get("/fixtures/{fixture_id}/timer")
-async def get_timer(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+async def get_timer(fixture_id: int, db: Session = Depends(get_db)):
     """Get current timer status"""
     timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
     if not timer or timer.current_half == 0:
@@ -248,6 +248,16 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
             # Remove the player from the lineup (they're sent off)
             db.delete(lineup_entry)
 
+    # Special handling for goal: automatically update fixture score
+    if event.event_type == "goal":
+        # Determine which team scored by checking if the player belongs to home or away team
+        if player.team_id == fixture.home_team_id:
+            # Home team scored
+            fixture.home_score = (fixture.home_score or 0) + 1
+        elif player.team_id == fixture.away_team_id:
+            # Away team scored
+            fixture.away_score = (fixture.away_score or 0) + 1
+
     db.commit()
     db.refresh(db_event)
 
@@ -267,16 +277,16 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
     )
 
 @router.get("/fixtures/{fixture_id}/events", response_model=List[EventResponse])
-async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
     """Get all events for a fixture, ordered by minute"""
     events = db.query(MatchEvent).options(
         joinedload(MatchEvent.player)
     ).filter(
         MatchEvent.fixture_id == fixture_id
     ).order_by(
-        MatchEvent.half,
-        MatchEvent.minute,
-        MatchEvent.created_at
+        desc(MatchEvent.half),
+        desc(MatchEvent.minute),
+        desc(MatchEvent.created_at)
     ).all()
 
     return [
@@ -339,6 +349,26 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         # This would need manual intervention by the match manager
         pass
 
+    # Handle goal scoring changes
+    fixture = db.query(Fixture).filter(Fixture.id == event.fixture_id).first()
+    old_player = db.query(Player).filter(Player.id == old_player_id).first()
+    new_player = db.query(Player).filter(Player.id == event_data.player_id).first()
+
+    if fixture and old_player and new_player:
+        # Handle removal of old goal (if it was a goal)
+        if old_event_type == "goal":
+            if old_player.team_id == fixture.home_team_id:
+                fixture.home_score = max(0, (fixture.home_score or 0) - 1)
+            elif old_player.team_id == fixture.away_team_id:
+                fixture.away_score = max(0, (fixture.away_score or 0) - 1)
+
+        # Handle addition of new goal (if it's now a goal)
+        if event_data.event_type == "goal":
+            if new_player.team_id == fixture.home_team_id:
+                fixture.home_score = (fixture.home_score or 0) + 1
+            elif new_player.team_id == fixture.away_team_id:
+                fixture.away_score = (fixture.away_score or 0) + 1
+
     db.commit()
     db.refresh(event)
 
@@ -363,6 +393,20 @@ async def delete_event(event_id: int, db: Session = Depends(get_db), current_use
     event = db.query(MatchEvent).filter(MatchEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    # Get fixture and player information before deleting the event
+    fixture = db.query(Fixture).filter(Fixture.id == event.fixture_id).first()
+    player = db.query(Player).filter(Player.id == event.player_id).first()
+
+    # Special handling for goal deletion: automatically update fixture score
+    if event.event_type == "goal" and fixture and player:
+        # Determine which team scored and decrement the score
+        if player.team_id == fixture.home_team_id:
+            # Home team goal being removed
+            fixture.home_score = max(0, (fixture.home_score or 0) - 1)
+        elif player.team_id == fixture.away_team_id:
+            # Away team goal being removed
+            fixture.away_score = max(0, (fixture.away_score or 0) - 1)
 
     # Note: If deleting a red card event, the player would need to be manually
     # added back to the lineup if desired, as we don't store their original position

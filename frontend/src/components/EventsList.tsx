@@ -10,6 +10,7 @@ import {
   TrashIcon,
   PencilIcon
 } from '@heroicons/react/24/outline';
+import { eventsApi } from '../utils/api';
 
 interface MatchEvent {
   id: number;
@@ -98,11 +99,8 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/events`);
-      if (response.ok) {
-        const eventsData = await response.json();
-        setEvents(eventsData);
-      }
+      const eventsData = await eventsApi.getEvents(fixtureId);
+      setEvents(eventsData);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -116,22 +114,15 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/events/events/${eventId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setEvents(events.filter(e => e.id !== eventId));
-        if (onEventDeleted) {
-          onEventDeleted();
-        }
-      } else {
-        const error = await response.json();
-        alert(`Error deleting event: ${error.detail}`);
+      await eventsApi.deleteEvent(eventId);
+      setEvents(events.filter(e => e.id !== eventId));
+      if (onEventDeleted) {
+        onEventDeleted();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event');
+      const errorMessage = error.response?.data?.detail || 'Failed to delete event';
+      alert(`Error deleting event: ${errorMessage}`);
     }
   };
 

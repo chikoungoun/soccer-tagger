@@ -4,6 +4,7 @@ import {
   PauseIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { eventsApi } from '../utils/api';
 
 interface TimerData {
   fixture_id: number;
@@ -38,20 +39,17 @@ const MatchTimer: React.FC<MatchTimerProps> = ({ fixtureId, hasLineups, onTimerU
 
   const fetchTimer = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/timer`);
-      if (response.ok) {
-        const timerData = await response.json();
-        setTimer(timerData);
+      const timerData = await eventsApi.getTimer(fixtureId);
+      setTimer(timerData);
 
-        // Calculate current minute if timer is running
-        if (timerData.current_half > 0 && timerData.current_half < 3 && timerData.half_start_time && !timerData.is_paused) {
-          const startTime = new Date(timerData.half_start_time + 'Z'); // Add Z for UTC
-          const now = new Date();
-          const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
-          setCurrentMinute(Math.max(0, elapsedMinutes));
-        } else {
-          setCurrentMinute(timerData.current_minute || 0);
-        }
+      // Calculate current minute if timer is running
+      if (timerData.current_half > 0 && timerData.current_half < 3 && timerData.half_start_time && !timerData.is_paused) {
+        const startTime = new Date(timerData.half_start_time + 'Z'); // Add Z for UTC
+        const now = new Date();
+        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+        setCurrentMinute(Math.max(0, elapsedMinutes));
+      } else {
+        setCurrentMinute(timerData.current_minute || 0);
       }
     } catch (error) {
       console.error('Error fetching timer:', error);
@@ -61,18 +59,12 @@ const MatchTimer: React.FC<MatchTimerProps> = ({ fixtureId, hasLineups, onTimerU
   const startHalf = async (half: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/timer/start-half?half=${half}`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        fetchTimer();
-      } else {
-        const error = await response.json();
-        alert(`Error starting half: ${error.detail}`);
-      }
-    } catch (error) {
+      await eventsApi.startHalf(fixtureId, half);
+      fetchTimer();
+    } catch (error: any) {
       console.error('Error starting half:', error);
-      alert('Failed to start half');
+      const errorMessage = error.response?.data?.detail || 'Failed to start half';
+      alert(`Error starting half: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -81,18 +73,12 @@ const MatchTimer: React.FC<MatchTimerProps> = ({ fixtureId, hasLineups, onTimerU
   const endHalf = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/timer/end-half`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        fetchTimer();
-      } else {
-        const error = await response.json();
-        alert(`Error ending half: ${error.detail}`);
-      }
-    } catch (error) {
+      await eventsApi.endHalf(fixtureId);
+      fetchTimer();
+    } catch (error: any) {
       console.error('Error ending half:', error);
-      alert('Failed to end half');
+      const errorMessage = error.response?.data?.detail || 'Failed to end half';
+      alert(`Error ending half: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

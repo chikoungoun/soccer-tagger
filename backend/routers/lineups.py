@@ -16,7 +16,7 @@ from schemas import (
 router = APIRouter()
 
 @router.get("/fixture/{fixture_id}", response_model=FixtureWithLineups)
-def get_fixture_lineups(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+def get_fixture_lineups(fixture_id: int, db: Session = Depends(get_db)):
     """Get fixture with complete lineups for both teams"""
     fixture = db.query(Fixture).options(
         joinedload(Fixture.home_team),

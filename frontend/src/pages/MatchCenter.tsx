@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { fixturesApi, lineupsApi } from '../utils/api';
+import { fixturesApi, lineupsApi, eventsApi } from '../utils/api';
 import { FixtureWithTeams, FixtureWithLineups, TeamLineup } from '../types';
 import MatchTimer from '../components/MatchTimer';
 import EventTagger from '../components/EventTagger';
@@ -55,10 +55,12 @@ const MatchCenter: React.FC = () => {
 
   const handleEventCreated = () => {
     setEventsRefreshTrigger(prev => prev + 1);
+    fetchData(); // Refetch fixture data to get updated score
   };
 
   const handleEventDeleted = () => {
     setEventsRefreshTrigger(prev => prev + 1);
+    fetchData(); // Refetch fixture data to get updated score
   };
 
   const handleEventEdit = (event: any) => {
@@ -68,25 +70,15 @@ const MatchCenter: React.FC = () => {
 
   const handleEventUpdate = async (eventId: number, eventData: any) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/events/events/${eventId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData),
-      });
-
-      if (response.ok) {
-        setEventsRefreshTrigger(prev => prev + 1);
-        setShowEditModal(false);
-        setEditingEvent(null);
-      } else {
-        const error = await response.json();
-        alert(`Error updating event: ${error.detail}`);
-      }
-    } catch (error) {
+      await eventsApi.updateEvent(eventId, eventData);
+      setEventsRefreshTrigger(prev => prev + 1);
+      fetchData(); // Refetch fixture data to get updated score
+      setShowEditModal(false);
+      setEditingEvent(null);
+    } catch (error: any) {
       console.error('Error updating event:', error);
-      alert('Failed to update event');
+      const errorMessage = error.response?.data?.detail || 'Failed to update event';
+      alert(`Error updating event: ${errorMessage}`);
     }
   };
 

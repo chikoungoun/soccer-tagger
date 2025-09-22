@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import { Player, TeamLineup } from '../types';
+import { eventsApi } from '../utils/api';
 
 interface EventTaggerProps {
   fixtureId: number;
@@ -182,66 +183,33 @@ const EventTagger: React.FC<EventTaggerProps> = ({
     try {
       if (selectedEventType === 'substitution') {
         // Create both substitution events
-        const subOutResponse = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/events`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            player_id: selectedPlayerOut!.id,
-            event_type: 'substitution_out',
-            minute: customMinute || currentMinute,
-            half: currentHalf,
-            extra_info: `Substituted by ${selectedPlayerIn!.name}`
-          }),
+        await eventsApi.createEvent(fixtureId, {
+          player_id: selectedPlayerOut!.id,
+          event_type: 'substitution_out',
+          minute: customMinute || currentMinute,
+          half: currentHalf,
+          extra_info: `Substituted by ${selectedPlayerIn!.name}`
         });
 
-        if (!subOutResponse.ok) {
-          const error = await subOutResponse.json();
-          throw new Error(`Error creating sub out event: ${error.detail}`);
-        }
-
-        const subInResponse = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/events`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            player_id: selectedPlayerIn!.id,
-            event_type: 'substitution_in',
-            minute: customMinute || currentMinute,
-            half: currentHalf,
-            extra_info: `Substitutes ${selectedPlayerOut!.name}`
-          }),
+        await eventsApi.createEvent(fixtureId, {
+          player_id: selectedPlayerIn!.id,
+          event_type: 'substitution_in',
+          minute: customMinute || currentMinute,
+          half: currentHalf,
+          extra_info: `Substitutes ${selectedPlayerOut!.name}`
         });
-
-        if (!subInResponse.ok) {
-          const error = await subInResponse.json();
-          throw new Error(`Error creating sub in event: ${error.detail}`);
-        }
 
         // Update lineup state after successful substitution
         updateLineupAfterSubstitution(selectedPlayerOut!, selectedPlayerIn!);
       } else {
         // Create regular event
-        const response = await fetch(`http://localhost:8000/api/events/fixtures/${fixtureId}/events`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            player_id: selectedPlayer!.id,
-            event_type: selectedEventType,
-            minute: customMinute || currentMinute,
-            half: currentHalf,
-            extra_info: extraInfo || null
-          }),
+        await eventsApi.createEvent(fixtureId, {
+          player_id: selectedPlayer!.id,
+          event_type: selectedEventType,
+          minute: customMinute || currentMinute,
+          half: currentHalf,
+          extra_info: extraInfo || null
         });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(`Error creating event: ${error.detail}`);
-        }
       }
 
       // Reset form
@@ -255,9 +223,10 @@ const EventTagger: React.FC<EventTaggerProps> = ({
       if (onEventCreated) {
         onEventCreated();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      alert(error instanceof Error ? error.message : 'Failed to create event');
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to create event';
+      alert(`Error creating event: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }

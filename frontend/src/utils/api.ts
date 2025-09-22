@@ -89,3 +89,22 @@ export const usersApi = {
   toggleActive: (id: number): Promise<any> => api.put(`/auth/users/${id}/toggle-active`).then(res => res.data),
   delete: (id: number): Promise<void> => api.delete(`/auth/users/${id}`).then(res => res.data),
 };
+
+// Events API
+export const eventsApi = {
+  getTimer: (fixtureId: number): Promise<any> => api.get(`/events/fixtures/${fixtureId}/timer`).then(res => res.data),
+  startHalf: (fixtureId: number, half: number): Promise<any> =>
+    api.post(`/events/fixtures/${fixtureId}/timer/start-half?half=${half}`).then(res => res.data),
+  endHalf: (fixtureId: number): Promise<any> =>
+    api.post(`/events/fixtures/${fixtureId}/timer/end-half`).then(res => res.data),
+  pauseTimer: (fixtureId: number): Promise<any> =>
+    api.post(`/events/fixtures/${fixtureId}/timer/pause`).then(res => res.data),
+  resumeTimer: (fixtureId: number): Promise<any> =>
+    api.post(`/events/fixtures/${fixtureId}/timer/resume`).then(res => res.data),
+  getEvents: (fixtureId: number): Promise<any[]> => api.get(`/events/fixtures/${fixtureId}/events`).then(res => res.data),
+  createEvent: (fixtureId: number, eventData: any): Promise<any> =>
+    api.post(`/events/fixtures/${fixtureId}/events`, eventData).then(res => res.data),
+  updateEvent: (eventId: number, eventData: any): Promise<any> =>
+    api.put(`/events/events/${eventId}`, eventData).then(res => res.data),
+  deleteEvent: (eventId: number): Promise<void> => api.delete(`/events/events/${eventId}`).then(res => res.data),
+};
