@@ -116,8 +116,8 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <TrophyIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Soccer Manager</h1>
-                  <div className="text-xs text-emerald-100 font-medium">Professional Management System</div>
+                  <h1 className="text-xl font-bold text-white">Soccer Tagger</h1>
+                  <div className="text-xs text-emerald-100 font-medium">Professional Tagging System</div>
                 </div>
               </div>
             </div>
@@ -140,23 +140,23 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="hidden md:block relative">
                 <Button
                   variant="ghost"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30 h-auto px-3 py-2"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                       <UserIcon className="h-4 w-4 text-white" />
                     </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-white">{user?.username}</div>
+                    <div className="text-left min-w-0">
+                      <div className="text-sm font-medium text-white leading-none mb-1">{user?.username}</div>
                       <Badge
-                        variant={getRoleBadgeVariant(user?.role || '')}
-                        className="text-xs mt-1"
+                        variant={getRoleBadgeVariant(user?.role || '') as any}
+                        className="text-xs h-4 px-1.5 py-0"
                       >
                         {getRoleDisplayName(user?.role || '')}
                       </Badge>
                     </div>
-                    <ChevronDownIcon className="h-4 w-4 text-white" />
+                    <ChevronDownIcon className="h-4 w-4 text-white flex-shrink-0" />
                   </div>
                 </Button>
 
@@ -228,8 +228,8 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <TrophyIcon className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">Soccer Manager</h2>
-                    <p className="text-sm text-gray-600">Management System</p>
+                    <h2 className="text-lg font-bold text-gray-900">Soccer Tagger</h2>
+                    <p className="text-sm text-gray-600">Tagging System</p>
                   </div>
                 </div>
               </div>
