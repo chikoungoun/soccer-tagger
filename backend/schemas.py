@@ -132,7 +132,6 @@ class LineupBase(BaseModel):
     player_id: int
     is_starter: bool = True
     position_played: Optional[str] = None
-    minutes_played: int = 0
 
 class LineupCreate(LineupBase):
     pass
@@ -140,7 +139,6 @@ class LineupCreate(LineupBase):
 class LineupUpdate(BaseModel):
     is_starter: Optional[bool] = None
     position_played: Optional[str] = None
-    minutes_played: Optional[int] = None
 
 class Lineup(LineupBase):
     id: int

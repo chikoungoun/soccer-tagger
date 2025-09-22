@@ -94,13 +94,7 @@ def calculate_player_minutes(fixture_id: int, db: Session):
                     )
                     player_data['total_minutes'] += final_minutes
 
-    # Update database with calculated minutes
-    for lineup in lineups:
-        player_id = lineup.player_id
-        if player_id in player_minutes:
-            lineup.minutes_played = player_minutes[player_id]['total_minutes']
-
-    db.commit()
+    # Note: minutes_played field removed from database schema
     return player_minutes
 
 def calculate_minutes_between_events(start_half: int, start_minute: int, end_half: int, end_minute: int) -> int:
@@ -579,7 +573,6 @@ async def get_player_minutes(fixture_id: int, db: Session = Depends(get_db)):
             "player_position": lineup.player.position,
             "is_starter": lineup.is_starter,
             "position_played": lineup.position_played,
-            "minutes_played": lineup.minutes_played,
             "team_id": lineup.team_id
         })
 
