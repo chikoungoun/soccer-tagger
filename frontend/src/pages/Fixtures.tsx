@@ -25,6 +25,7 @@ import { FixtureWithTeams, FixtureWithLineups, Team, CreateFixtureData, Gameweek
 import FixtureModal from '../components/FixtureModal';
 import ScoreModal from '../components/ScoreModal';
 import LineupModal from '../components/LineupModal';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ interface LineupStatus {
 }
 
 const Fixtures: React.FC = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [fixtures, setFixtures] = useState<FixtureWithTeams[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -60,7 +62,7 @@ const Fixtures: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     // Initialize filters from URL parameters
@@ -113,12 +115,26 @@ const Fixtures: React.FC = () => {
         teamsApi.getAll(),
         gameweeksApi.getAll()
       ]);
-      setFixtures(fixturesData);
+
+      // Filter fixtures based on user role
+      let filteredFixtures = fixturesData;
+      if (user?.role === 'tagger') {
+        // For taggers, only show fixtures from active gameweeks
+        const activeGameweekIds = gameweeksData
+          .filter(gw => gw.is_active)
+          .map(gw => gw.id);
+
+        filteredFixtures = fixturesData.filter(fixture =>
+          fixture.gameweek_id && activeGameweekIds.includes(fixture.gameweek_id)
+        );
+      }
+
+      setFixtures(filteredFixtures);
       setTeams(teamsData);
       setGameweeks(gameweeksData);
 
-      // Fetch lineup statuses for all fixtures
-      await fetchLineupStatuses(fixturesData);
+      // Fetch lineup statuses for filtered fixtures
+      await fetchLineupStatuses(filteredFixtures);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
