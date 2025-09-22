@@ -107,4 +107,5 @@ export const eventsApi = {
   updateEvent: (eventId: number, eventData: any): Promise<any> =>
     api.put(`/events/events/${eventId}`, eventData).then(res => res.data),
   deleteEvent: (eventId: number): Promise<void> => api.delete(`/events/events/${eventId}`).then(res => res.data),
+  getPlayerMinutes: (fixtureId: number): Promise<any[]> => api.get(`/events/fixtures/${fixtureId}/player-minutes`).then(res => res.data),
 };

@@ -7,6 +7,7 @@ import MatchTimer from '../components/MatchTimer';
 import EventTagger from '../components/EventTagger';
 import EventsList from '../components/EventsList';
 import EditEventModal from '../components/EditEventModal';
+import PlayerMinutes from '../components/PlayerMinutes';
 
 const MatchCenter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -179,7 +180,7 @@ const MatchCenter: React.FC = () => {
         onTimerUpdate={handleTimerUpdate}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Event Tagger */}
         <div>
           <EventTagger
@@ -201,6 +202,16 @@ const MatchCenter: React.FC = () => {
             refreshTrigger={eventsRefreshTrigger}
             onEventDeleted={handleEventDeleted}
             onEventEdit={handleEventEdit}
+          />
+        </div>
+
+        {/* Player Minutes */}
+        <div>
+          <PlayerMinutes
+            fixtureId={fixture.id}
+            homeTeamId={fixture.home_team_id}
+            awayTeamId={fixture.away_team_id}
+            refreshTrigger={eventsRefreshTrigger}
           />
         </div>
       </div>

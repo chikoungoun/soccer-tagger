@@ -10,6 +10,133 @@ from auth import get_current_active_user, require_tagger_or_admin
 
 router = APIRouter()
 
+def calculate_player_minutes(fixture_id: int, db: Session):
+    """Calculate minutes played for all players in a fixture considering 2 halves, substitutions, and red cards"""
+
+    # Get all events for this fixture, ordered by time
+    events = db.query(MatchEvent).filter(
+        MatchEvent.fixture_id == fixture_id
+    ).order_by(
+        MatchEvent.half,
+        MatchEvent.minute,
+        MatchEvent.created_at
+    ).all()
+
+    # Get all lineups for this fixture
+    lineups = db.query(Lineup).filter(Lineup.fixture_id == fixture_id).all()
+
+    # Get timer to know match progress
+    timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
+
+    # Initialize player minutes tracking
+    player_minutes = {}
+
+    for lineup in lineups:
+        player_id = lineup.player_id
+        player_minutes[player_id] = {
+            'total_minutes': 0,
+            'is_on_field': lineup.is_starter,  # Starters begin on field
+            'last_event_minute': 0 if lineup.is_starter else None,  # Track when they entered
+            'last_event_half': 1 if lineup.is_starter else None,
+            'red_carded': False
+        }
+
+    # Process each event chronologically
+    for event in events:
+        player_id = event.player_id
+
+        if player_id not in player_minutes:
+            continue
+
+        player_data = player_minutes[player_id]
+
+        # Calculate minutes since last event for players currently on field
+        if player_data['is_on_field'] and not player_data['red_carded']:
+            minutes_since_last = calculate_minutes_between_events(
+                player_data['last_event_half'], player_data['last_event_minute'],
+                event.half, event.minute
+            )
+            player_data['total_minutes'] += minutes_since_last
+
+        # Handle different event types
+        if event.event_type == 'substitution_out':
+            if player_data['is_on_field']:
+                player_data['is_on_field'] = False
+
+        elif event.event_type == 'substitution_in':
+            if not player_data['is_on_field'] and not player_data['red_carded']:
+                player_data['is_on_field'] = True
+                player_data['last_event_minute'] = event.minute
+                player_data['last_event_half'] = event.half
+
+        elif event.event_type == 'red_card':
+            if player_data['is_on_field']:
+                player_data['is_on_field'] = False
+                player_data['red_carded'] = True
+
+        # Update last event tracking for players on field
+        if player_data['is_on_field']:
+            player_data['last_event_minute'] = event.minute
+            player_data['last_event_half'] = event.half
+
+    # Calculate final minutes for players still on field at match end
+    if timer:
+        current_half = timer.current_half
+        current_minute = get_current_match_minute(timer)
+
+        for player_id, player_data in player_minutes.items():
+            if player_data['is_on_field'] and not player_data['red_carded']:
+                # Add minutes from last event to current time
+                if player_data['last_event_half'] is not None:
+                    final_minutes = calculate_minutes_between_events(
+                        player_data['last_event_half'], player_data['last_event_minute'],
+                        current_half, current_minute
+                    )
+                    player_data['total_minutes'] += final_minutes
+
+    # Update database with calculated minutes
+    for lineup in lineups:
+        player_id = lineup.player_id
+        if player_id in player_minutes:
+            lineup.minutes_played = player_minutes[player_id]['total_minutes']
+
+    db.commit()
+    return player_minutes
+
+def calculate_minutes_between_events(start_half: int, start_minute: int, end_half: int, end_minute: int) -> int:
+    """Calculate minutes between two match events, handling half transitions"""
+    if start_half == end_half:
+        return max(0, end_minute - start_minute)
+
+    if start_half == 1 and end_half == 2:
+        # Minutes remaining in first half + minutes in second half
+        first_half_remaining = max(0, 45 - start_minute)
+        second_half_minutes = end_minute
+        return first_half_remaining + second_half_minutes
+
+    return 0  # Shouldn't happen in normal cases
+
+def get_current_match_minute(timer: MatchTimer) -> int:
+    """Get current minute of the match considering paused time"""
+    if timer.current_half <= 0 or timer.current_half >= 3:
+        return 0
+
+    if not timer.half_start_time:
+        return 0
+
+    if timer.is_paused and timer.pause_time:
+        elapsed_seconds = (timer.pause_time - timer.half_start_time).total_seconds()
+    else:
+        elapsed_seconds = (datetime.utcnow() - timer.half_start_time).total_seconds()
+
+    total_minutes = int((elapsed_seconds - (timer.total_pause_duration or 0)) / 60)
+
+    # Adjust for second half
+    if timer.current_half == 2:
+        return min(45, total_minutes)  # Second half minutes (0-45)
+    else:
+        return min(45, total_minutes)  # First half minutes (0-45)
+
 class CreateEventRequest(BaseModel):
     player_id: int
     event_type: str
@@ -261,6 +388,9 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
     db.commit()
     db.refresh(db_event)
 
+    # Recalculate player minutes after event creation
+    calculate_player_minutes(fixture_id, db)
+
     # Return event with player info
     return EventResponse(
         id=db_event.id,
@@ -372,6 +502,9 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     db.commit()
     db.refresh(event)
 
+    # Recalculate player minutes after event update
+    calculate_player_minutes(event.fixture_id, db)
+
     # Return event with player info
     return EventResponse(
         id=event.id,
@@ -412,7 +545,42 @@ async def delete_event(event_id: int, db: Session = Depends(get_db), current_use
     # added back to the lineup if desired, as we don't store their original position
     # This prevents automatic re-addition that might be incorrect
 
+    # Store fixture_id before deleting event
+    fixture_id = event.fixture_id
+
     db.delete(event)
     db.commit()
 
+    # Recalculate player minutes after event deletion
+    calculate_player_minutes(fixture_id, db)
+
     return {"message": "Event deleted successfully"}
+
+@router.get("/fixtures/{fixture_id}/player-minutes")
+async def get_player_minutes(fixture_id: int, db: Session = Depends(get_db)):
+    """Get minutes played for all players in a fixture"""
+
+    # First recalculate to ensure up-to-date data
+    player_minutes = calculate_player_minutes(fixture_id, db)
+
+    # Get updated lineup data with player info
+    lineups = db.query(Lineup).options(
+        joinedload(Lineup.player)
+    ).filter(
+        Lineup.fixture_id == fixture_id
+    ).all()
+
+    # Format response
+    result = []
+    for lineup in lineups:
+        result.append({
+            "player_id": lineup.player_id,
+            "player_name": lineup.player.name,
+            "player_position": lineup.player.position,
+            "is_starter": lineup.is_starter,
+            "position_played": lineup.position_played,
+            "minutes_played": lineup.minutes_played,
+            "team_id": lineup.team_id
+        })
+
+    return result
