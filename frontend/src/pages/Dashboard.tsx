@@ -10,8 +10,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { teamsApi, playersApi, fixturesApi } from '../utils/api';
 import { Team, Player, FixtureWithTeams } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
   const [stats, setStats] = useState({
     totalTeams: 0,
     totalPlayers: 0,
@@ -23,12 +25,22 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!isAuthenticated) return;
+
       try {
-        const [teams, players, fixtures] = await Promise.all([
-          teamsApi.getAll(),
-          playersApi.getAll(),
-          fixturesApi.getAll()
-        ]);
+        setLoading(true);
+        const fixtures = await fixturesApi.getAll();
+
+        let teams: Team[] = [];
+        let players: Player[] = [];
+
+        // Only fetch teams and players for super_admin
+        if (user?.role === 'super_admin') {
+          [teams, players] = await Promise.all([
+            teamsApi.getAll(),
+            playersApi.getAll()
+          ]);
+        }
 
         setStats({
           totalTeams: teams.length,
@@ -46,38 +58,46 @@ const Dashboard: React.FC = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [isAuthenticated, user]);
 
-  const statCards = [
+  const allStatCards = [
     {
       name: 'Total Teams',
       value: stats.totalTeams,
       icon: UserGroupIcon,
       color: 'bg-blue-500',
-      link: '/teams'
+      link: '/teams',
+      allowedRoles: ['super_admin']
     },
     {
       name: 'Total Players',
       value: stats.totalPlayers,
       icon: UsersIcon,
       color: 'bg-green-500',
-      link: '/players'
+      link: '/players',
+      allowedRoles: ['super_admin']
     },
     {
       name: 'Total Fixtures',
       value: stats.totalFixtures,
       icon: CalendarDaysIcon,
       color: 'bg-purple-500',
-      link: '/fixtures'
+      link: '/fixtures',
+      allowedRoles: ['super_admin', 'tagger']
     },
     {
       name: 'Live Matches',
       value: stats.liveMatches,
       icon: PlayIcon,
       color: 'bg-red-500',
-      link: '/fixtures?status=live'
+      link: '/fixtures?status=live',
+      allowedRoles: ['super_admin', 'tagger']
     }
   ];
+
+  const statCards = allStatCards.filter(card =>
+    card.allowedRoles.includes(user?.role || '')
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -93,7 +113,7 @@ const Dashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -182,17 +202,21 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link to="/teams" className="card hover:shadow-lg transition-shadow duration-200 text-center">
-          <UserGroupIcon className="h-12 w-12 text-soccer-green mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Teams</h3>
-          <p className="text-gray-500">Create and manage your soccer teams</p>
-        </Link>
+        {user?.role === 'super_admin' && (
+          <Link to="/teams" className="card hover:shadow-lg transition-shadow duration-200 text-center">
+            <UserGroupIcon className="h-12 w-12 text-soccer-green mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Teams</h3>
+            <p className="text-gray-500">Create and manage your soccer teams</p>
+          </Link>
+        )}
 
-        <Link to="/players" className="card hover:shadow-lg transition-shadow duration-200 text-center">
-          <UsersIcon className="h-12 w-12 text-soccer-green mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Players</h3>
-          <p className="text-gray-500">Add and organize your team players</p>
-        </Link>
+        {user?.role === 'super_admin' && (
+          <Link to="/players" className="card hover:shadow-lg transition-shadow duration-200 text-center">
+            <UsersIcon className="h-12 w-12 text-soccer-green mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Players</h3>
+            <p className="text-gray-500">Add and organize your team players</p>
+          </Link>
+        )}
 
         <Link to="/fixtures" className="card hover:shadow-lg transition-shadow duration-200 text-center">
           <CalendarDaysIcon className="h-12 w-12 text-soccer-green mx-auto mb-4" />

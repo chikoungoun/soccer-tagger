@@ -132,3 +132,18 @@ export interface FixtureWithLineups extends FixtureWithTeams {
   home_lineup?: TeamLineup;
   away_lineup?: TeamLineup;
 }
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: 'super_admin' | 'tagger';
+  is_active: boolean;
+}
+
+export interface CreateUserData {
+  username: string;
+  email: string;
+  password: string;
+  role: 'super_admin' | 'tagger';
+}
