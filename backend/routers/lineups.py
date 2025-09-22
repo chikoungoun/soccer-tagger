@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 from database import get_db
-from models import Lineup, Fixture, Team, Player
+from models import Lineup, Fixture, Team, Player, User
+from auth import get_current_active_user, require_tagger_or_admin
 from schemas import (
     Lineup as LineupSchema,
     LineupCreate,
@@ -15,7 +16,7 @@ from schemas import (
 router = APIRouter()
 
 @router.get("/fixture/{fixture_id}", response_model=FixtureWithLineups)
-def get_fixture_lineups(fixture_id: int, db: Session = Depends(get_db)):
+def get_fixture_lineups(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get fixture with complete lineups for both teams"""
     fixture = db.query(Fixture).options(
         joinedload(Fixture.home_team),
@@ -68,7 +69,7 @@ def get_fixture_lineups(fixture_id: int, db: Session = Depends(get_db)):
     return fixture_dict
 
 @router.post("/", response_model=LineupSchema)
-def create_lineup(lineup: LineupCreate, db: Session = Depends(get_db)):
+def create_lineup(lineup: LineupCreate, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Add a player to a fixture lineup"""
     # Verify fixture exists
     fixture = db.query(Fixture).filter(Fixture.id == lineup.fixture_id).first()
@@ -112,7 +113,7 @@ def create_lineup(lineup: LineupCreate, db: Session = Depends(get_db)):
     return db_lineup
 
 @router.put("/{lineup_id}", response_model=LineupSchema)
-def update_lineup(lineup_id: int, lineup_update: LineupUpdate, db: Session = Depends(get_db)):
+def update_lineup(lineup_id: int, lineup_update: LineupUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Update a lineup entry"""
     db_lineup = db.query(Lineup).filter(Lineup.id == lineup_id).first()
     if db_lineup is None:
@@ -137,7 +138,7 @@ def update_lineup(lineup_id: int, lineup_update: LineupUpdate, db: Session = Dep
     return db_lineup
 
 @router.delete("/{lineup_id}")
-def delete_lineup(lineup_id: int, db: Session = Depends(get_db)):
+def delete_lineup(lineup_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Remove a player from lineup"""
     db_lineup = db.query(Lineup).filter(Lineup.id == lineup_id).first()
     if db_lineup is None:
@@ -148,7 +149,7 @@ def delete_lineup(lineup_id: int, db: Session = Depends(get_db)):
     return {"message": "Player removed from lineup successfully"}
 
 @router.delete("/fixture/{fixture_id}/team/{team_id}")
-def clear_team_lineup(fixture_id: int, team_id: int, db: Session = Depends(get_db)):
+def clear_team_lineup(fixture_id: int, team_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Clear all lineup entries for a team in a fixture"""
     # Verify fixture exists and team is part of it
     fixture = db.query(Fixture).filter(Fixture.id == fixture_id).first()
@@ -172,7 +173,8 @@ def set_team_lineup(
     fixture_id: int,
     team_id: int,
     lineups: List[LineupCreate],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_tagger_or_admin)
 ):
     """Set complete lineup for a team (replaces existing lineup)"""
     # Verify fixture exists and team is part of it

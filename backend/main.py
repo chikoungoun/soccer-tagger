@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
-from routers import teams, players, fixtures, gameweeks, lineups, uploads, events
+from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -16,7 +16,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:3002"],
-    allow_credentials=True,
+    allow_credentials=True,  # This is important for httpOnly cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -35,6 +35,7 @@ app.include_router(gameweeks.router, prefix="/api/gameweeks", tags=["gameweeks"]
 app.include_router(lineups.router, prefix="/api/lineups", tags=["lineups"])
 app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 
 @app.get("/")
 async def root():

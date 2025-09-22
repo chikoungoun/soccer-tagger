@@ -28,13 +28,12 @@ def create_team(team: TeamCreate, db: Session = Depends(get_db)):
     return db_team
 
 @router.put("/{team_id}", response_model=TeamSchema)
-def update_team(team_id: int, team_update: TeamUpdate, db: Session = Depends(get_db)):
+def update_team(team_id: int, team: TeamUpdate, db: Session = Depends(get_db)):
     db_team = db.query(Team).filter(Team.id == team_id).first()
     if db_team is None:
         raise HTTPException(status_code=404, detail="Team not found")
 
-    update_data = team_update.dict(exclude_unset=True)
-    for field, value in update_data.items():
+    for field, value in team.dict(exclude_unset=True).items():
         setattr(db_team, field, value)
 
     db.commit()

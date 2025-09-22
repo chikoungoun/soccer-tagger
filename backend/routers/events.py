@@ -4,8 +4,9 @@ from sqlalchemy import desc
 from typing import List, Dict, Optional
 from datetime import datetime, date
 from database import get_db
-from models import MatchEvent, MatchTimer, Player, Fixture, Lineup
+from models import MatchEvent, MatchTimer, Player, Fixture, Lineup, User
 from pydantic import BaseModel
+from auth import get_current_active_user, require_tagger_or_admin
 
 router = APIRouter()
 
@@ -43,7 +44,7 @@ class TimerResponse(BaseModel):
         from_attributes = True
 
 @router.post("/fixtures/{fixture_id}/timer/start-half")
-async def start_half(fixture_id: int, half: int, db: Session = Depends(get_db)):
+async def start_half(fixture_id: int, half: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Start a specific half of the match"""
     if half not in [1, 2]:
         raise HTTPException(status_code=400, detail="Half must be 1 or 2")
@@ -92,7 +93,7 @@ async def start_half(fixture_id: int, half: int, db: Session = Depends(get_db)):
     return {"message": f"Half {half} started", "timer": timer}
 
 @router.post("/fixtures/{fixture_id}/timer/end-half")
-async def end_half(fixture_id: int, db: Session = Depends(get_db)):
+async def end_half(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """End the current half"""
     timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
     if not timer:
@@ -139,7 +140,7 @@ async def end_half(fixture_id: int, db: Session = Depends(get_db)):
     return {"message": message, "timer": timer, "final_minute": final_minute}
 
 @router.post("/fixtures/{fixture_id}/timer/pause")
-async def pause_timer(fixture_id: int, db: Session = Depends(get_db)):
+async def pause_timer(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Pause the match timer"""
     timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
     if not timer:
@@ -156,7 +157,7 @@ async def pause_timer(fixture_id: int, db: Session = Depends(get_db)):
     return {"message": "Timer paused"}
 
 @router.post("/fixtures/{fixture_id}/timer/resume")
-async def resume_timer(fixture_id: int, db: Session = Depends(get_db)):
+async def resume_timer(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Resume the match timer"""
     timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
     if not timer:
@@ -177,7 +178,7 @@ async def resume_timer(fixture_id: int, db: Session = Depends(get_db)):
     return {"message": "Timer resumed"}
 
 @router.get("/fixtures/{fixture_id}/timer")
-async def get_timer(fixture_id: int, db: Session = Depends(get_db)):
+async def get_timer(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get current timer status"""
     timer = db.query(MatchTimer).filter(MatchTimer.fixture_id == fixture_id).first()
     if not timer or timer.current_half == 0:
@@ -206,7 +207,7 @@ async def get_timer(fixture_id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/fixtures/{fixture_id}/events", response_model=EventResponse)
-async def create_event(fixture_id: int, event: CreateEventRequest, db: Session = Depends(get_db)):
+async def create_event(fixture_id: int, event: CreateEventRequest, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Create a new match event"""
     # Validate fixture exists
     fixture = db.query(Fixture).filter(Fixture.id == fixture_id).first()
@@ -266,7 +267,7 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
     )
 
 @router.get("/fixtures/{fixture_id}/events", response_model=List[EventResponse])
-async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
+async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get all events for a fixture, ordered by minute"""
     events = db.query(MatchEvent).options(
         joinedload(MatchEvent.player)
@@ -296,7 +297,7 @@ async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
     ]
 
 @router.put("/events/{event_id}", response_model=EventResponse)
-async def update_event(event_id: int, event_data: CreateEventRequest, db: Session = Depends(get_db)):
+async def update_event(event_id: int, event_data: CreateEventRequest, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Update a match event"""
     event = db.query(MatchEvent).filter(MatchEvent.id == event_id).first()
     if not event:
@@ -357,7 +358,7 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     )
 
 @router.delete("/events/{event_id}")
-async def delete_event(event_id: int, db: Session = Depends(get_db)):
+async def delete_event(event_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     """Delete a match event"""
     event = db.query(MatchEvent).filter(MatchEvent.id == event_id).first()
     if not event:
