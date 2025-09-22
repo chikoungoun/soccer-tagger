@@ -14,6 +14,7 @@ import {
 import { teamsApi, playersApi } from '../utils/api';
 import { TeamWithPlayers, Player, CreatePlayerData, Team } from '../types';
 import PlayerModal from '../components/PlayerModal';
+import { getImageUrl } from '../utils/imageUtils';
 
 const TeamDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -192,7 +193,7 @@ const TeamDetail: React.FC = () => {
         <div className="flex items-start space-x-6">
           {team.logo_url ? (
             <img
-              src={team.logo_url}
+              src={getImageUrl(team.logo_url)}
               alt={`${team.name} logo`}
               className="h-24 w-24 rounded-full object-cover"
             />
@@ -285,7 +286,7 @@ const TeamDetail: React.FC = () => {
                           <div className="flex items-center space-x-3">
                             {player.photo_url ? (
                               <img
-                                src={player.photo_url}
+                                src={getImageUrl(player.photo_url)}
                                 alt={player.name}
                                 className="h-12 w-12 rounded-full object-cover"
                               />

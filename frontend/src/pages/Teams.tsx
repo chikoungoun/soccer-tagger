@@ -10,6 +10,7 @@ import {
 import { teamsApi } from '../utils/api';
 import { Team, CreateTeamData } from '../types';
 import TeamModal from '../components/TeamModal';
+import { getImageUrl } from '../utils/imageUtils';
 
 const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -124,7 +125,7 @@ const Teams: React.FC = () => {
               <div className="text-center mb-4">
                 {team.logo_url ? (
                   <img
-                    src={team.logo_url}
+                    src={getImageUrl(team.logo_url)}
                     alt={`${team.name} logo`}
                     className="h-16 w-16 mx-auto rounded-full object-cover"
                   />

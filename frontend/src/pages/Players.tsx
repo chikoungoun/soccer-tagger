@@ -10,6 +10,7 @@ import {
 import { playersApi, teamsApi } from '../utils/api';
 import { Player, Team, CreatePlayerData } from '../types';
 import PlayerModal from '../components/PlayerModal';
+import { getImageUrl } from '../utils/imageUtils';
 
 const Players: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -295,7 +296,7 @@ const Players: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     {player.photo_url ? (
                       <img
-                        src={player.photo_url}
+                        src={getImageUrl(player.photo_url)}
                         alt={player.name}
                         className="h-12 w-12 rounded-full object-cover"
                       />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { Player, CreatePlayerData, Team } from '../types';
+import { getImageUrl } from '../utils/imageUtils';
 
 interface PlayerModalProps {
   player?: Player | null;
@@ -38,7 +39,8 @@ const PlayerModal: React.FC<PlayerModalProps> = ({ player, teamId, teams, onSave
         team_id: player.team_id,
         is_active: player.is_active
       });
-      setUploadedImageUrl(player.photo_url || '');
+      // Convert relative paths to full URLs for display
+      setUploadedImageUrl(getImageUrl(player.photo_url));
     }
   }, [player]);
 
@@ -65,6 +67,7 @@ const PlayerModal: React.FC<PlayerModalProps> = ({ player, teamId, teams, onSave
       ...formData,
       name: formData.name.trim(),
       age: formData.age || undefined,
+      birth_date: formData.birth_date && formData.birth_date.trim() ? formData.birth_date.trim() : undefined,
       nationality: formData.nationality?.trim() || undefined,
       photo_url: formData.photo_url?.trim() || undefined
     };
@@ -90,9 +93,10 @@ const PlayerModal: React.FC<PlayerModalProps> = ({ player, teamId, teams, onSave
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/uploads/player-photo', {
+      const response = await fetch('/api/uploads/player-photo', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -100,10 +104,14 @@ const PlayerModal: React.FC<PlayerModalProps> = ({ player, teamId, teams, onSave
       }
 
       const result = await response.json();
-      const imageUrl = `http://localhost:8000${result.photo_url}`;
 
-      setUploadedImageUrl(imageUrl);
-      setFormData(prev => ({ ...prev, photo_url: imageUrl }));
+      // Store the relative path in form data (for database)
+      const relativePath = result.photo_url;
+      // Use full URL for preview display
+      const fullImageUrl = getImageUrl(relativePath);
+
+      setUploadedImageUrl(fullImageUrl);
+      setFormData(prev => ({ ...prev, photo_url: relativePath }));
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
@@ -306,7 +314,7 @@ const PlayerModal: React.FC<PlayerModalProps> = ({ player, teamId, teams, onSave
               {/* Manual URL Input */}
               <div>
                 <input
-                  type="url"
+                  type="text"
                   id="photo_url"
                   name="photo_url"
                   value={formData.photo_url}

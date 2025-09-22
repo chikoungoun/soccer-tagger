@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { Team, CreateTeamData } from '../types';
+import { getImageUrl } from '../utils/imageUtils';
 
 interface TeamModalProps {
   team?: Team | null;
@@ -28,12 +29,14 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
         stadium: team.stadium || '',
         description: team.description || ''
       });
-      setUploadedImageUrl(team.logo_url || '');
+      // Convert relative paths to full URLs for display
+      setUploadedImageUrl(getImageUrl(team.logo_url));
     }
   }, [team]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submission - current formData:', formData);
     const dataToSave = {
       ...formData,
       logo_url: formData.logo_url || undefined,
@@ -41,6 +44,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
       stadium: formData.stadium || undefined,
       description: formData.description || undefined
     };
+    console.log('Form submission - dataToSave:', dataToSave);
     onSave(dataToSave);
   };
 
@@ -53,31 +57,59 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File input changed', e.target.files);
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
 
+    console.log('Uploading file:', file.name, file.type, file.size);
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
+      console.log('FormData created:', formData);
 
-      const response = await fetch('http://localhost:8000/api/uploads/team-logo', {
+      console.log('Making fetch request to /api/uploads/team-logo');
+      const response = await fetch('/api/uploads/team-logo', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
+      console.log('Response received:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();
-      const imageUrl = `http://localhost:8000${result.logo_url}`;
+      console.log('Upload result:', result);
 
-      setUploadedImageUrl(imageUrl);
-      setFormData(prev => ({ ...prev, logo_url: imageUrl }));
+      // Store the relative path in form data (for database)
+      const relativePath = result.logo_url;
+      // Use full URL for preview display
+      const fullImageUrl = getImageUrl(relativePath);
+
+      console.log('Setting uploaded image URL for preview:', fullImageUrl);
+      console.log('Storing relative path in form:', relativePath);
+      setUploadedImageUrl(fullImageUrl);
+      setFormData(prev => {
+        const newFormData = { ...prev, logo_url: relativePath };
+        console.log('Updated formData after upload:', newFormData);
+        return newFormData;
+      });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      alert(`Failed to upload image: ${error.message}. Please try again.`);
     } finally {
       setUploading(false);
     }
@@ -143,7 +175,10 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
 
               {/* Upload Button */}
               <div className="flex items-center space-x-3">
-                <label className="btn-secondary cursor-pointer flex items-center">
+                <label
+                  className="btn-secondary cursor-pointer flex items-center"
+                  onClick={() => console.log('Label clicked')}
+                >
                   <PhotoIcon className="h-5 w-5 mr-2" />
                   {uploading ? 'Uploading...' : 'Upload Logo'}
                   <input
@@ -152,6 +187,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
                     onChange={handleImageUpload}
                     disabled={uploading}
                     className="hidden"
+                    onClick={() => console.log('File input clicked')}
                   />
                 </label>
               </div>
@@ -159,7 +195,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
               {/* Manual URL Input */}
               <div>
                 <input
-                  type="url"
+                  type="text"
                   id="logo_url"
                   name="logo_url"
                   value={formData.logo_url}
