@@ -102,8 +102,12 @@ const Players: React.FC = () => {
     setEditingPlayer(null);
   };
 
+  const getTeamData = (teamId: number) => {
+    return teams.find(t => t.id === teamId) || null;
+  };
+
   const getTeamName = (teamId: number) => {
-    const team = teams.find(t => t.id === teamId);
+    const team = getTeamData(teamId);
     return team ? team.name : 'Unknown Team';
   };
 
@@ -404,8 +408,28 @@ const Players: React.FC = () => {
                             {getPositionName(player.position)}
                           </Badge>
 
-                          <Badge variant="outline" className="text-xs flex items-center">
-                            <span>👥 {getTeamName(player.team_id)}</span>
+                          <Badge variant="outline" className="text-xs flex items-center space-x-2">
+                            {(() => {
+                              const team = getTeamData(player.team_id);
+                              return (
+                                <>
+                                  {team?.logo_url ? (
+                                    <img
+                                      src={getImageUrl(team.logo_url)}
+                                      alt={`${team.name} logo`}
+                                      className="h-4 w-4 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-4 w-4 rounded-full bg-gray-400 flex items-center justify-center">
+                                      <span className="text-[8px] text-white font-bold">
+                                        {team?.name.substring(0, 2).toUpperCase() || '??'}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <span>{getTeamName(player.team_id)}</span>
+                                </>
+                              );
+                            })()}
                           </Badge>
 
                           {player.birth_date && (

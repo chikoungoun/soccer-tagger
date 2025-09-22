@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLeftIcon,
+  PlayIcon,
+  StopIcon,
+  ClockIcon,
+  TrophyIcon,
+  MapPinIcon,
+  CalendarDaysIcon,
+  SparklesIcon,
+  FireIcon,
+  BoltIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
 import { fixturesApi, lineupsApi, eventsApi } from '../utils/api';
 import { FixtureWithTeams, FixtureWithLineups, TeamLineup } from '../types';
 import MatchTimer from '../components/MatchTimer';
@@ -8,6 +20,9 @@ import EventTagger from '../components/EventTagger';
 import EventsList from '../components/EventsList';
 import EditEventModal from '../components/EditEventModal';
 import PlayerMinutes from '../components/PlayerMinutes';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const MatchCenter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -98,122 +113,216 @@ const MatchCenter: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+          <PlayIcon className="h-12 w-12 text-soccer-green absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   if (!fixture) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-900">Match not found</h2>
-        <button
-          onClick={() => navigate('/fixtures')}
-          className="mt-4 btn-primary"
-        >
-          Back to Fixtures
-        </button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="border-0 shadow-2xl bg-gradient-to-br from-gray-50 to-white max-w-md w-full">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <TrophyIcon className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Match not found</h2>
+            <p className="text-gray-600 mb-8">The match you're looking for doesn't exist or has been removed.</p>
+            <Button
+              onClick={() => navigate('/fixtures')}
+              size="lg"
+              className="shadow-lg"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Back to Fixtures
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const { date, time } = formatDate(fixture.match_date);
 
+  const getStatusIcon = () => {
+    switch (fixture.status) {
+      case 'live':
+        return <PlayIcon className="h-8 w-8 text-red-500 animate-pulse" />;
+      case 'completed':
+        return <TrophyIcon className="h-8 w-8 text-green-500" />;
+      case 'cancelled':
+        return <StopIcon className="h-8 w-8 text-gray-500" />;
+      default:
+        return <ClockIcon className="h-8 w-8 text-blue-500" />;
+    }
+  };
+
+  const getStatusGradient = () => {
+    switch (fixture.status) {
+      case 'live':
+        return 'from-red-600 via-red-700 to-pink-800';
+      case 'completed':
+        return 'from-green-600 via-green-700 to-emerald-800';
+      case 'cancelled':
+        return 'from-gray-600 via-gray-700 to-slate-800';
+      default:
+        return 'from-blue-600 via-blue-700 to-indigo-800';
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <button
+      <div className="flex items-center space-x-4 mb-6">
+        <Button
           onClick={() => navigate('/fixtures')}
-          className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+          variant="outline"
+          size="sm"
+          className="shadow-md"
         >
-          <ArrowLeftIcon className="h-6 w-6" />
-        </button>
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          Back
+        </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Match Center</h1>
-          <p className="text-gray-600">{date} at {time}</p>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+            <SparklesIcon className="h-8 w-8 text-yellow-500" />
+            <span>Match Center</span>
+          </h1>
+          <p className="text-gray-600 flex items-center space-x-2 mt-1">
+            <CalendarDaysIcon className="h-4 w-4" />
+            <span>{date} at {time}</span>
+          </p>
         </div>
       </div>
 
-      {/* Match Header */}
-      <div className="card">
-        <div className="flex items-center justify-center space-x-8">
-          {/* Home Team */}
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
-              {fixture.home_team.name}
+      {/* Stadium-Style Match Header */}
+      <Card className="border-0 shadow-2xl overflow-hidden">
+        {/* Stadium Header */}
+        <div className={`bg-gradient-to-br ${getStatusGradient()} p-8 text-white relative`}>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon()}
+                <Badge
+                  variant="secondary"
+                  className={`bg-white/20 text-white border-white/30 text-lg px-4 py-2 ${
+                    fixture.status === 'live' ? 'animate-pulse' : ''
+                  }`}
+                >
+                  {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
+                </Badge>
+              </div>
+              {fixture.venue && (
+                <div className="flex items-center space-x-2 text-white/90">
+                  <MapPinIcon className="h-5 w-5" />
+                  <span className="text-lg font-medium">{fixture.venue}</span>
+                </div>
+              )}
             </div>
-            <div className="text-sm text-gray-500">Home</div>
-          </div>
 
-          {/* Score */}
-          <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900">
-              {fixture.home_score} - {fixture.away_score}
-            </div>
-            <div className={`status-${fixture.status} text-center`}>
-              {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
-            </div>
-          </div>
+            {/* Teams and Score */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+              {/* Home Team */}
+              <div className="lg:col-span-2 text-center lg:text-right">
+                <h2 className="text-4xl font-bold mb-3">{fixture.home_team.name}</h2>
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 text-white border-white/30 text-base px-3 py-1"
+                >
+                  🏠 Home
+                </Badge>
+              </div>
 
-          {/* Away Team */}
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
-              {fixture.away_team.name}
+              {/* Score */}
+              <div className="text-center">
+                <div className="text-7xl font-bold text-white mb-2 drop-shadow-lg">
+                  {fixture.home_score} - {fixture.away_score}
+                </div>
+                <div className="text-xl text-white/90 font-medium">
+                  {currentMinute > 0 && fixture.status === 'live' && (
+                    <span>{currentMinute}'</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Away Team */}
+              <div className="lg:col-span-2 text-center lg:text-left">
+                <h2 className="text-4xl font-bold mb-3">{fixture.away_team.name}</h2>
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 text-white border-white/30 text-base px-3 py-1"
+                >
+                  ✈️ Away
+                </Badge>
+              </div>
             </div>
-            <div className="text-sm text-gray-500">Away</div>
           </div>
         </div>
-
-        {fixture.venue && (
-          <div className="mt-4 text-center text-sm text-gray-600">
-            {fixture.venue}
-          </div>
-        )}
-      </div>
+      </Card>
 
       {/* Match Timer */}
-      <MatchTimer
-        fixtureId={fixture.id}
-        hasLineups={!!(fixtureWithLineups?.home_lineup && fixtureWithLineups?.away_lineup)}
-        onTimerUpdate={handleTimerUpdate}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Event Tagger */}
-        <div>
-          <EventTagger
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          <MatchTimer
             fixtureId={fixture.id}
-            homeTeamLineup={fixtureWithLineups?.home_lineup || null}
-            awayTeamLineup={fixtureWithLineups?.away_lineup || null}
-            currentMinute={currentMinute}
-            currentHalf={currentHalf}
-            onEventCreated={handleEventCreated}
+            hasLineups={!!(fixtureWithLineups?.home_lineup && fixtureWithLineups?.away_lineup)}
+            onTimerUpdate={handleTimerUpdate}
           />
-        </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Event Tagger */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-gray-900">
+              <BoltIcon className="h-5 w-5 text-yellow-500" />
+              <span>Live Events</span>
+            </CardTitle>
+            <CardDescription>
+              Tag match events in real-time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EventTagger
+              fixtureId={fixture.id}
+              homeTeamLineup={fixtureWithLineups?.home_lineup || null}
+              awayTeamLineup={fixtureWithLineups?.away_lineup || null}
+              currentMinute={currentMinute}
+              currentHalf={currentHalf}
+              onEventCreated={handleEventCreated}
+            />
+          </CardContent>
+        </Card>
 
         {/* Events List */}
-        <div>
-          <EventsList
-            fixtureId={fixture.id}
-            homeTeamLineup={fixtureWithLineups?.home_lineup || null}
-            awayTeamLineup={fixtureWithLineups?.away_lineup || null}
-            refreshTrigger={eventsRefreshTrigger}
-            onEventDeleted={handleEventDeleted}
-            onEventEdit={handleEventEdit}
-          />
-        </div>
-
-        {/* Player Minutes */}
-        <div>
-          <PlayerMinutes
-            fixtureId={fixture.id}
-            homeTeamId={fixture.home_team_id}
-            awayTeamId={fixture.away_team_id}
-            refreshTrigger={eventsRefreshTrigger}
-          />
-        </div>
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-gray-900">
+              <FireIcon className="h-5 w-5 text-red-500" />
+              <span>Match Timeline</span>
+            </CardTitle>
+            <CardDescription>
+              Complete match event history
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EventsList
+              fixtureId={fixture.id}
+              homeTeamLineup={fixtureWithLineups?.home_lineup || null}
+              awayTeamLineup={fixtureWithLineups?.away_lineup || null}
+              refreshTrigger={eventsRefreshTrigger}
+              onEventDeleted={handleEventDeleted}
+              onEventEdit={handleEventEdit}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Edit Event Modal */}

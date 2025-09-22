@@ -11,14 +11,21 @@ import {
   ChevronDownIcon,
   UserIcon,
   Cog6ToothIcon,
+  Bars3Icon,
+  XMarkIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -68,14 +75,14 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     item.allowedRoles.includes(user?.role || '')
   );
 
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-red-100 text-red-800';
+        return 'destructive';
       case 'tagger':
-        return 'bg-blue-100 text-blue-800';
+        return 'default';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   };
 
@@ -98,47 +105,74 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="bg-soccer-green shadow-lg">
+      <header className="bg-gradient-to-r from-soccer-green via-emerald-600 to-teal-700 shadow-2xl border-b border-emerald-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <TrophyIcon className="h-8 w-8 text-white mr-3" />
-              <h1 className="text-xl font-bold text-white">Soccer Manager</h1>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
+                  <TrophyIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-white">Soccer Manager</h1>
+                  <div className="text-xs text-emerald-100 font-medium">Professional Management System</div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center">
-              <div className="ml-3 relative">
-                <button
-                  type="button"
-                  className="bg-white bg-opacity-10 hover:bg-opacity-20 flex text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors duration-200"
+
+            <div className="flex items-center space-x-4">
+              {/* Mobile menu button */}
+              <button
+                type="button"
+                className="md:hidden p-2 rounded-lg text-white hover:bg-white/20 transition-colors"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <XMarkIcon className="h-6 w-6" />
+                ) : (
+                  <Bars3Icon className="h-6 w-6" />
+                )}
+              </button>
+
+              {/* Desktop user menu */}
+              <div className="hidden md:block relative">
+                <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  <div className="flex items-center space-x-3 py-2 px-3 rounded-lg">
-                    <UserIcon className="h-5 w-5 text-white" />
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-4 w-4 text-white" />
+                    </div>
                     <div className="text-left">
                       <div className="text-sm font-medium text-white">{user?.username}</div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(user?.role || '')}`}>
-                          {getRoleDisplayName(user?.role || '')}
-                        </span>
-                      </div>
+                      <Badge
+                        variant={getRoleBadgeVariant(user?.role || '')}
+                        className="text-xs mt-1"
+                      >
+                        {getRoleDisplayName(user?.role || '')}
+                      </Badge>
                     </div>
                     <ChevronDownIcon className="h-4 w-4 text-white" />
                   </div>
-                </button>
+                </Button>
+
                 {userMenuOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
-                    <div className="py-1">
-                      <button
+                  <Card className="absolute right-0 mt-2 w-56 border-0 shadow-2xl z-50">
+                    <CardContent className="p-2">
+                      <Button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        variant="ghost"
+                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
                         Sign out
-                      </button>
-                    </div>
-                  </div>
+                      </Button>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </div>
@@ -147,9 +181,15 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden md:block w-64 bg-white shadow-sm min-h-screen">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:block w-64 bg-white/70 backdrop-blur-sm shadow-xl border-r border-gray-200/50 min-h-screen">
           <nav className="mt-8 px-4">
+            <div className="mb-6">
+              <div className="flex items-center space-x-2 px-3 py-2">
+                <SparklesIcon className="h-5 w-5 text-emerald-500" />
+                <span className="text-sm font-semibold text-gray-700">Navigation</span>
+              </div>
+            </div>
             <ul className="space-y-2">
               {allowedNavItems.map((item) => {
                 const Icon = item.icon;
@@ -157,15 +197,15 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <li key={item.name}>
                     <Link
                       to={item.href}
-                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                         isActive(item.href)
-                          ? 'bg-soccer-green text-white'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg scale-105'
+                          : 'text-gray-600 hover:bg-gray-100/70 hover:text-gray-900 hover:scale-105'
                       }`}
                     >
                       <Icon
                         className={`mr-3 h-5 w-5 ${
-                          isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'
+                          isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-emerald-500'
                         }`}
                       />
                       {item.name}
@@ -177,22 +217,98 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </nav>
         </aside>
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        {/* Mobile Slide-out Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <div className="absolute top-0 left-0 w-80 h-full bg-white shadow-2xl">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <TrophyIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Soccer Manager</h2>
+                    <p className="text-sm text-gray-600">Management System</p>
+                  </div>
+                </div>
+              </div>
+
+              <nav className="p-4">
+                <ul className="space-y-2">
+                  {allowedNavItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          to={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`group flex items-center px-4 py-4 text-base font-medium rounded-xl transition-all duration-200 ${
+                            isActive(item.href)
+                              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          }`}
+                        >
+                          <Icon
+                            className={`mr-4 h-6 w-6 ${
+                              isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-emerald-500'
+                            }`}
+                          />
+                          {item.name}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+
+              <div className="absolute bottom-6 left-4 right-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{user?.username}</div>
+                      <Badge variant={getRoleBadgeVariant(user?.role || '')} className="text-xs mt-1">
+                        {getRoleDisplayName(user?.role || '')}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+                    Sign out
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200/50 z-40 shadow-2xl">
           <nav className="flex justify-around py-2">
-            {allowedNavItems.map((item) => {
+            {allowedNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex flex-col items-center py-2 px-3 text-xs ${
+                  className={`flex flex-col items-center py-2 px-2 text-xs transition-all duration-200 ${
                     isActive(item.href)
-                      ? 'text-soccer-green'
-                      : 'text-gray-600'
+                      ? 'text-emerald-600 scale-110'
+                      : 'text-gray-600 hover:text-emerald-500'
                   }`}
                 >
-                  <Icon className="h-5 w-5 mb-1" />
+                  <div className={`p-1 rounded-lg ${
+                    isActive(item.href) ? 'bg-emerald-100' : ''
+                  }`}>
+                    <Icon className="h-5 w-5 mb-1" />
+                  </div>
                   {item.name}
                 </Link>
               );
@@ -201,7 +317,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+        <main className="flex-1 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

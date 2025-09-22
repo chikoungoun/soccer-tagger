@@ -4,10 +4,22 @@ import {
   TrashIcon,
   UserIcon,
   ShieldCheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  UsersIcon,
+  CogIcon,
+  KeyIcon,
+  AtSymbolIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  SparklesIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { usersApi } from '../utils/api';
 import { User, CreateUserData } from '../types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -79,14 +91,14 @@ const Users: React.FC = () => {
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-red-100 text-red-800';
+        return 'destructive';
       case 'tagger':
-        return 'bg-blue-100 text-blue-800';
+        return 'default';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   };
 
@@ -103,207 +115,316 @@ const Users: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Loading users...</div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+          <UsersIcon className="h-12 w-12 text-soccer-green absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Users</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Manage user accounts and permissions
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center rounded-md bg-soccer-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
-          >
-            <PlusIcon className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-            Add User
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <UserIcon className="h-5 w-5 text-gray-600" />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                          {getRoleDisplayName(user.role)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleToggleActive(user.id)}
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.is_active
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          }`}
-                        >
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-900 ml-4"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-blue-800 rounded-2xl p-8 text-white shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <UsersIcon className="h-10 w-10 text-yellow-300" />
+                <h1 className="text-4xl font-bold">User Management</h1>
+              </div>
+              <p className="text-purple-100 text-lg mb-4">Manage user accounts and permissions</p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  👥 {users.length} Total Users
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✅ {users.filter(u => u.is_active).length} Active
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  🛡️ {users.filter(u => u.role === 'super_admin').length} Admins
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0">
+              <Button
+                onClick={() => setShowModal(true)}
+                size="lg"
+                className="bg-white text-purple-600 hover:bg-gray-100 shadow-lg flex items-center"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add User
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Users Grid */}
+      {users.length === 0 ? (
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <UsersIcon className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No users found</h3>
+            <p className="text-gray-600 mb-8 max-w-sm mx-auto">Create your first user account to get started</p>
+            <Button
+              onClick={() => setShowModal(true)}
+              size="lg"
+              className="shadow-lg"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Create Your First User
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {users.map((user, index) => {
+            const gradients = [
+              'from-blue-500 to-indigo-600',
+              'from-emerald-500 to-teal-600',
+              'from-purple-500 to-pink-600',
+              'from-orange-500 to-red-600',
+              'from-cyan-500 to-blue-600',
+              'from-rose-500 to-pink-600',
+            ];
+            const gradient = gradients[index % gradients.length];
+
+            return (
+              <Card
+                key={user.id}
+                className="border-0 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+              >
+                {/* User Header */}
+                <div className={`bg-gradient-to-br ${gradient} p-6 text-white relative`}>
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                          <UserIcon className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold">{user.username}</h3>
+                          <div className="flex items-center space-x-1 text-white/90">
+                            <AtSymbolIcon className="h-4 w-4" />
+                            <span className="text-sm">{user.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {user.role === 'super_admin' && (
+                        <ShieldCheckIcon className="h-6 w-6 text-yellow-300" />
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant={getRoleBadgeVariant(user.role) as any}
+                        className="bg-white/20 text-white border-white/30"
+                      >
+                        {user.role === 'super_admin' ? '🛡️ ' : '👤 '}
+                        {getRoleDisplayName(user.role)}
+                      </Badge>
+
+                      <div className="flex items-center space-x-1">
+                        {user.is_active ? (
+                          <EyeIcon className="h-4 w-4 text-green-300" />
+                        ) : (
+                          <EyeSlashIcon className="h-4 w-4 text-red-300" />
+                        )}
+                        <span className="text-sm text-white/90">
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <CardContent className="p-6">
+                  {/* User Info */}
+                  <div className="space-y-4 mb-6">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Account Status</span>
+                      <Badge
+                        variant={user.is_active ? 'success' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Created</span>
+                      <span className="text-gray-900 font-medium">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => handleToggleActive(user.id)}
+                      variant={user.is_active ? "outline" : "default"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {user.is_active ? (
+                        <>
+                          <EyeSlashIcon className="h-4 w-4 mr-2" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <EyeIcon className="h-4 w-4 mr-2" />
+                          Activate
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={() => handleDeleteUser(user.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="px-3 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
       {/* Create User Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Create New User</h3>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setError('');
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser}>
-              {error && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                  {error}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md border-0 shadow-2xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center space-x-2 text-gray-900">
+                    <UserGroupIcon className="h-5 w-5 text-purple-600" />
+                    <span>Create New User</span>
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Add a new user account to the system
+                  </CardDescription>
                 </div>
-              )}
-
-              <div className="mb-4">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent"
-                />
-              </div>
-
-              <div className="mb-6">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
-                <select
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'super_admin' | 'tagger' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent"
-                >
-                  <option value="tagger">Tagger</option>
-                  <option value="super_admin">Super Admin</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
+                <Button
                   onClick={() => {
                     setShowModal(false);
                     setError('');
                   }}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  variant="ghost"
+                  size="sm"
+                  className="p-1"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-soccer-green rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-soccer-green disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Creating...' : 'Create User'}
-                </button>
+                  <XMarkIcon className="h-5 w-5" />
+                </Button>
               </div>
-            </form>
-          </div>
+            </CardHeader>
+
+            <CardContent>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                    <UserIcon className="h-4 w-4 inline mr-1" />
+                    Username
+                  </label>
+                  <Input
+                    type="text"
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    required
+                    placeholder="Enter username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    <AtSymbolIcon className="h-4 w-4 inline mr-1" />
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    <KeyIcon className="h-4 w-4 inline mr-1" />
+                    Password
+                  </label>
+                  <Input
+                    type="password"
+                    id="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    minLength={6}
+                    placeholder="Enter password (min 6 characters)"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                    <CogIcon className="h-4 w-4 inline mr-1" />
+                    Role
+                  </label>
+                  <select
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'super_admin' | 'tagger' })}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  >
+                    <option value="tagger">👤 Tagger</option>
+                    <option value="super_admin">🛡️ Super Admin</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setError('');
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create User'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

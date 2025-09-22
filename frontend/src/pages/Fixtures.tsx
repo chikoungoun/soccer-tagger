@@ -11,13 +11,24 @@ import {
   TrophyIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  MapPinIcon,
+  EyeIcon,
+  SparklesIcon,
+  FireIcon,
+  BoltIcon,
+  FunnelIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { fixturesApi, teamsApi, gameweeksApi, lineupsApi } from '../utils/api';
 import { FixtureWithTeams, FixtureWithLineups, Team, CreateFixtureData, Gameweek } from '../types';
 import FixtureModal from '../components/FixtureModal';
 import ScoreModal from '../components/ScoreModal';
 import LineupModal from '../components/LineupModal';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface LineupStatus {
   [fixtureId: number]: {
@@ -290,240 +301,328 @@ const Fixtures: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+          <CalendarDaysIcon className="h-12 w-12 text-soccer-green absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fixtures</h1>
-          <p className="text-gray-600">Manage match schedules and scores</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-emerald-700 to-teal-800 rounded-2xl p-8 text-white shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <CalendarDaysIcon className="h-10 w-10 text-yellow-300" />
+                <h1 className="text-4xl font-bold">Fixtures</h1>
+              </div>
+              <p className="text-green-100 text-lg mb-4">Manage match schedules, scores and live events</p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ⚽ {fixtures.length} Total Fixtures
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  🔴 {fixtures.filter(f => f.status === 'live').length} Live
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✅ {fixtures.filter(f => f.status === 'completed').length} Completed
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0">
+              <Button
+                onClick={() => setShowFixtureModal(true)}
+                size="lg"
+                className="bg-white text-green-600 hover:bg-gray-100 shadow-lg flex items-center"
+                disabled={teams.length < 2}
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Schedule Match
+              </Button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setShowFixtureModal(true)}
-          className="btn-primary flex items-center"
-          disabled={teams.length < 2}
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Schedule Match
-        </button>
       </div>
 
       {teams.length < 2 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-          <p className="text-yellow-700">
-            You need at least two teams to schedule a match.
-          </p>
-        </div>
+        <Card className="border-l-4 border-l-yellow-500 bg-yellow-50 border-yellow-200">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <ExclamationCircleIcon className="h-6 w-6 text-yellow-600 mr-3" />
+              <p className="text-yellow-700 font-medium">
+                You need at least two teams to schedule a match. Please create teams first.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filters */}
-      <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              name="status"
-              value={filters.status}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Fixtures</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="live">Live</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-gray-900">
+            <FunnelIcon className="h-5 w-5 text-emerald-600" />
+            <span>Filter Fixtures</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">All Fixtures</option>
+                <option value="scheduled">⏰ Scheduled</option>
+                <option value="live">🔴 Live</option>
+                <option value="completed">✅ Completed</option>
+                <option value="cancelled">❌ Cancelled</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Team
-            </label>
-            <select
-              name="teamId"
-              value={filters.teamId}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Teams</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Team
+              </label>
+              <select
+                name="teamId"
+                value={filters.teamId}
+                onChange={handleFilterChange}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">All Teams</option>
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Gameweek
-            </label>
-            <select
-              name="gameweekId"
-              value={filters.gameweekId}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Gameweeks</option>
-              {gameweeks.map(gameweek => (
-                <option key={gameweek.id} value={gameweek.id}>
-                  {gameweek.name}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Gameweek
+              </label>
+              <select
+                name="gameweekId"
+                value={filters.gameweekId}
+                onChange={handleFilterChange}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">All Gameweeks</option>
+                {gameweeks.map(gameweek => (
+                  <option key={gameweek.id} value={gameweek.id}>
+                    {gameweek.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Fixtures List */}
       {filteredFixtures.length === 0 ? (
-        <div className="text-center py-12">
-          <CalendarDaysIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {fixtures.length === 0 ? 'No fixtures scheduled' : 'No fixtures match your filters'}
-          </h3>
-          <p className="text-gray-500 mb-4">
-            {fixtures.length === 0
-              ? 'Schedule your first match to get started'
-              : 'Try adjusting your filters'
-            }
-          </p>
-          {fixtures.length === 0 && teams.length >= 2 && (
-            <button
-              onClick={() => setShowFixtureModal(true)}
-              className="btn-primary"
-            >
-              Schedule Match
-            </button>
-          )}
-        </div>
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <CalendarDaysIcon className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              {fixtures.length === 0 ? 'No fixtures scheduled' : 'No fixtures match your filters'}
+            </h3>
+            <p className="text-gray-600 mb-8 max-w-sm mx-auto">
+              {fixtures.length === 0
+                ? 'Schedule your first match to get started with live events'
+                : 'Try adjusting your filters to find fixtures'
+              }
+            </p>
+            {fixtures.length === 0 && teams.length >= 2 && (
+              <Button
+                onClick={() => setShowFixtureModal(true)}
+                size="lg"
+                className="shadow-lg"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Schedule Your First Match
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="space-y-4">
-          {filteredFixtures.map((fixture) => {
+        <div className="space-y-6">
+          {filteredFixtures.map((fixture, index) => {
             const { date, time } = formatDate(fixture.match_date);
             const gameweek = getGameweekForFixture(fixture.gameweek_id);
+
+            const statusColors = {
+              live: 'from-red-500 to-red-600',
+              completed: 'from-green-500 to-green-600',
+              scheduled: 'from-blue-500 to-blue-600',
+              cancelled: 'from-gray-500 to-gray-600'
+            };
+
+            const statusColor = statusColors[fixture.status as keyof typeof statusColors] || statusColors.scheduled;
+
             return (
-              <div
+              <Card
                 key={fixture.id}
-                className="card hover:shadow-lg transition-shadow duration-200"
+                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg overflow-hidden"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    {getStatusIcon(fixture.status)}
+                {/* Status Header */}
+                <div className={`bg-gradient-to-r ${statusColor} p-4 text-white relative`}>
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(fixture.status)}
+                      <Badge
+                        variant="secondary"
+                        className={`bg-white/20 text-white border-white/30 ${
+                          fixture.status === 'live' ? 'animate-pulse' : ''
+                        }`}
+                      >
+                        {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
+                      </Badge>
+                    </div>
+                    {gameweek && (
+                      <Link to="/gameweeks">
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-white/30 hover:bg-white/30 cursor-pointer"
+                        >
+                          🏆 {gameweek.name}
+                        </Badge>
+                      </Link>
+                    )}
+                  </div>
+                </div>
 
-                    <div className="flex items-center space-x-8">
-                      {/* Home Team */}
-                      <div className="text-right">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {fixture.home_team.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">Home</p>
+                <CardContent className="p-4">
+                  {/* Match Details */}
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
+                    {/* Home Team */}
+                    <div className="lg:col-span-2 text-center lg:text-right">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {fixture.home_team.name}
+                      </h3>
+                      <Badge variant="outline" className="text-xs">
+                        🏠 Home
+                      </Badge>
+                    </div>
+
+                    {/* Score & Time */}
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {fixture.home_score} - {fixture.away_score}
                       </div>
-
-                      {/* Score */}
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {fixture.home_score} - {fixture.away_score}
+                      <div className="text-xs text-gray-600 space-y-1">
+                        <div className="font-semibold">{date}</div>
+                        <div className="flex items-center justify-center space-x-1">
+                          <ClockIcon className="h-3 w-3" />
+                          <span>{time}</span>
                         </div>
-                        <span className={`status-${fixture.status}`}>
-                          {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
-                        </span>
-                      </div>
-
-                      {/* Away Team */}
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {fixture.away_team.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">Away</p>
+                        {fixture.venue && (
+                          <div className="flex items-center justify-center space-x-1">
+                            <MapPinIcon className="h-3 w-3" />
+                            <span>{fixture.venue}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Match Details */}
-                    <div className="text-sm text-gray-600">
-                      <p className="font-medium">{date}</p>
-                      <p>{time}</p>
-                      {fixture.venue && <p>{fixture.venue}</p>}
-                      {gameweek && (
-                        <div className="mt-2">
-                          <Link
-                            to="/gameweeks"
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
-                            title="View gameweek details"
-                          >
-                            <ClockIcon className="h-3 w-3 mr-1" />
-                            {gameweek.name}
-                          </Link>
-                        </div>
-                      )}
+                    {/* Away Team */}
+                    <div className="lg:col-span-2 text-center lg:text-left">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {fixture.away_team.name}
+                      </h3>
+                      <Badge variant="outline" className="text-xs">
+                        ✈️ Away
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Lineup Status */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-center">
+                      {getLineupStatusIndicator(fixture.id)}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center space-x-2">
-                    <Link
-                      to={`/match/${fixture.id}`}
-                      className="btn-primary text-sm"
-                      title="Match Center - Live Events"
-                    >
-                      Match Center
-                    </Link>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <Link to={`/match/${fixture.id}`}>
+                        <Button size="sm" className="shadow-md">
+                          <EyeIcon className="h-3 w-3 mr-1" />
+                          Match Center
+                        </Button>
+                      </Link>
 
-                    {(fixture.status === 'scheduled' || fixture.status === 'live') && (
-                      <button
-                        onClick={() => openScoreModal(fixture)}
-                        className="btn-secondary text-sm"
-                      >
-                        Update Score
-                      </button>
-                    )}
+                      {(fixture.status === 'scheduled' || fixture.status === 'live') && (
+                        <Button
+                          onClick={() => openScoreModal(fixture)}
+                          variant="secondary"
+                          size="sm"
+                          className="shadow-md"
+                        >
+                          <BoltIcon className="h-3 w-3 mr-1" />
+                          Update Score
+                        </Button>
+                      )}
 
-                    {fixture.status === 'live' && (
-                      <button
-                        onClick={() => handleCompleteFixture(fixture.id)}
-                        className="btn-secondary text-sm"
-                      >
-                        Complete Match
-                      </button>
-                    )}
+                      {fixture.status === 'live' && (
+                        <Button
+                          onClick={() => handleCompleteFixture(fixture.id)}
+                          variant="default"
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+                        >
+                          <CheckCircleIcon className="h-3 w-3 mr-1" />
+                          Complete Match
+                        </Button>
+                      )}
 
-                    <div className="flex flex-col items-center space-y-1">
-                      <button
+                      <Button
                         onClick={() => openLineupModal(fixture)}
-                        className="btn-secondary text-sm"
-                        title="Manage lineups"
+                        variant="outline"
+                        size="sm"
+                        className="shadow-md"
                       >
-                        Lineups
-                      </button>
-                      {getLineupStatusIndicator(fixture.id)}
+                        👥 Lineups
+                      </Button>
+
+                      <Button
+                        onClick={() => openEditModal(fixture)}
+                        variant="ghost"
+                        size="sm"
+                        className="p-1.5"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </Button>
+
+                      <Button
+                        onClick={() => handleDeleteFixture(fixture.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="p-1.5 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                      </Button>
                     </div>
-
-                    <button
-                      onClick={() => openEditModal(fixture)}
-                      className="p-2 text-gray-500 hover:text-soccer-green transition-colors"
-                      title="Edit fixture"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteFixture(fixture.id)}
-                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                      title="Delete fixture"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
