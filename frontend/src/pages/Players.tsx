@@ -5,12 +5,20 @@ import {
   TrashIcon,
   UserIcon,
   FunnelIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ShieldCheckIcon,
+  FireIcon,
+  SparklesIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { playersApi, teamsApi } from '../utils/api';
 import { Player, Team, CreatePlayerData } from '../types';
 import PlayerModal from '../components/PlayerModal';
 import { getImageUrl } from '../utils/imageUtils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const Players: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -152,28 +160,53 @@ const Players: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+          <UserIcon className="h-12 w-12 text-soccer-green absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Players</h1>
-          <p className="text-gray-600">Manage all players across teams</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-green-800 rounded-2xl p-8 text-white shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <UserIcon className="h-10 w-10 text-yellow-300" />
+                <h1 className="text-4xl font-bold">Players</h1>
+              </div>
+              <p className="text-emerald-100 text-lg mb-4">Manage all players across your teams</p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  {players.length} Total Players
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  {players.filter(p => p.is_active).length} Active
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  {teams.length} Teams
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0">
+              <Button
+                onClick={() => setShowModal(true)}
+                size="lg"
+                className="bg-white text-emerald-600 hover:bg-gray-100 shadow-lg flex items-center"
+                disabled={teams.length === 0}
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add New Player
+              </Button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary flex items-center"
-          disabled={teams.length === 0}
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add Player
-        </button>
       </div>
 
       {teams.length === 0 && (
@@ -185,186 +218,250 @@ const Players: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Players
-            </label>
-            <div className="relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                name="search"
-                value={filters.search}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/30">
+        <CardHeader className="pb-4">
+          <div className="flex items-center space-x-2">
+            <FunnelIcon className="h-5 w-5 text-emerald-600" />
+            <CardTitle className="text-lg">Filters</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Players
+              </label>
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  name="search"
+                  value={filters.search}
+                  onChange={handleFilterChange}
+                  className="pl-10"
+                  placeholder="Search by name..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Team
+              </label>
+              <select
+                name="teamId"
+                value={filters.teamId}
                 onChange={handleFilterChange}
-                className="field-input pl-10"
-                placeholder="Search by name..."
-              />
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">All Teams</option>
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Position
+              </label>
+              <select
+                name="position"
+                value={filters.position}
+                onChange={handleFilterChange}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">All Positions</option>
+                <option value="GK">🧤 Goalkeeper</option>
+                <option value="DF">🛡️ Defender</option>
+                <option value="MF">⚡ Midfielder</option>
+                <option value="FW">⚽ Forward</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                name="isActive"
+                value={filters.isActive}
+                onChange={handleFilterChange}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">All Players</option>
+                <option value="true">✅ Active Only</option>
+                <option value="false">⏸️ Inactive Only</option>
+              </select>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Team
-            </label>
-            <select
-              name="teamId"
-              value={filters.teamId}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Teams</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Position
-            </label>
-            <select
-              name="position"
-              value={filters.position}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Positions</option>
-              <option value="GK">Goalkeeper</option>
-              <option value="DF">Defender</option>
-              <option value="MF">Midfielder</option>
-              <option value="FW">Forward</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              name="isActive"
-              value={filters.isActive}
-              onChange={handleFilterChange}
-              className="field-input"
-            >
-              <option value="">All Players</option>
-              <option value="true">Active Only</option>
-              <option value="false">Inactive Only</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Players List */}
       {filteredPlayers.length === 0 ? (
-        <div className="text-center py-12">
-          <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {players.length === 0 ? 'No players yet' : 'No players match your filters'}
-          </h3>
-          <p className="text-gray-500 mb-4">
-            {players.length === 0
-              ? 'Add your first player to get started'
-              : 'Try adjusting your search filters'
-            }
-          </p>
-          {players.length === 0 && teams.length > 0 && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn-primary"
-            >
-              Add Player
-            </button>
-          )}
-        </div>
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <UserIcon className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              {players.length === 0 ? 'No players yet' : 'No players match your filters'}
+            </h3>
+            <p className="text-gray-600 mb-8 max-w-sm mx-auto">
+              {players.length === 0
+                ? 'Add your first player to get started building your squad'
+                : 'Try adjusting your search filters to find players'
+              }
+            </p>
+            {players.length === 0 && teams.length > 0 && (
+              <Button
+                onClick={() => setShowModal(true)}
+                size="lg"
+                className="shadow-lg"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add Your First Player
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredPlayers.map((player) => (
-              <li key={player.id} className={`px-6 py-4 hover:bg-gray-50 ${
-                player.position === 'GK' ? 'bg-blue-100/30' :
-                player.position === 'DF' ? 'bg-yellow-100/30' :
-                player.position === 'MF' ? 'bg-green-100/30' :
-                player.position === 'FW' ? 'bg-red-100/30' :
-                ''
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {player.photo_url ? (
-                      <img
-                        src={getImageUrl(player.photo_url)}
-                        alt={player.name}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        player.position === 'GK' ? 'bg-blue-200' :
-                        player.position === 'DF' ? 'bg-yellow-200' :
-                        player.position === 'MF' ? 'bg-green-200' :
-                        player.position === 'FW' ? 'bg-red-200' :
-                        'bg-gray-200'
-                      }`}>
-                        <UserIcon className={`h-6 w-6 ${
-                          player.position === 'GK' ? 'text-blue-600' :
-                          player.position === 'DF' ? 'text-yellow-600' :
-                          player.position === 'MF' ? 'text-green-600' :
-                          player.position === 'FW' ? 'text-red-600' :
-                          'text-gray-500'
-                        }`} />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{player.name}</h3>
-                      <div className="flex items-center space-x-3 mt-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
-                          {getPositionName(player.position)}
-                        </span>
-                        <span className="text-sm text-gray-500">#{player.jersey_number}</span>
-                        <span className="text-sm text-gray-500">{getTeamName(player.team_id)}</span>
-                        {!player.is_active && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                            Inactive
-                          </span>
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {filteredPlayers.map((player, index) => {
+              const positionGradients = {
+                'GK': 'from-blue-50 to-blue-100/50',
+                'DF': 'from-yellow-50 to-yellow-100/50',
+                'MF': 'from-emerald-50 to-emerald-100/50',
+                'FW': 'from-red-50 to-red-100/50'
+              };
+              const positionColors = {
+                'GK': 'bg-blue-500',
+                'DF': 'bg-yellow-500',
+                'MF': 'bg-emerald-500',
+                'FW': 'bg-red-500'
+              };
+
+              return (
+                <div
+                  key={player.id}
+                  className={`px-6 py-5 hover:shadow-md transition-all duration-200 bg-gradient-to-r ${positionGradients[player.position as keyof typeof positionGradients] || 'from-gray-50 to-gray-100/50'} group hover:scale-[1.005] hover:z-10 relative`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Player Photo/Icon */}
+                      <div className="relative">
+                        {player.photo_url ? (
+                          <img
+                            src={getImageUrl(player.photo_url)}
+                            alt={player.name}
+                            className="h-16 w-16 rounded-full object-cover border-4 border-white shadow-md"
+                          />
+                        ) : (
+                          <div className={`h-16 w-16 rounded-full flex items-center justify-center ${positionColors[player.position as keyof typeof positionColors] || 'bg-gray-500'} shadow-md`}>
+                            <UserIcon className="h-8 w-8 text-white" />
+                          </div>
                         )}
-                      </div>
-                      {(player.age || player.birth_date || player.nationality) && (
-                        <div className="flex items-center space-x-2 mt-1 text-sm text-gray-600">
-                          {player.birth_date ? (
-                            <span>Born: {new Date(player.birth_date).toLocaleDateString()} ({new Date().getFullYear() - new Date(player.birth_date).getFullYear()} years old)</span>
-                          ) : player.age ? (
-                            <span>Age: {player.age}</span>
-                          ) : null}
-                          {(player.birth_date || player.age) && player.nationality && <span>•</span>}
-                          {player.nationality && <span>{player.nationality}</span>}
+                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md">
+                          <span className="text-xs font-bold text-gray-700">#{player.jersey_number}</span>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Player Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                            {player.name}
+                          </h3>
+                          {player.is_active ? (
+                            <Badge variant="success" className="text-xs">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Inactive
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                          <Badge
+                            className={`
+                              ${player.position === 'GK' ? 'bg-blue-500 hover:bg-blue-600' : ''}
+                              ${player.position === 'DF' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                              ${player.position === 'MF' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                              ${player.position === 'FW' ? 'bg-red-500 hover:bg-red-600' : ''}
+                              text-white border-0
+                            `}
+                          >
+                            {player.position === 'GK' && '🧤'}
+                            {player.position === 'DF' && '🛡️'}
+                            {player.position === 'MF' && '⚡'}
+                            {player.position === 'FW' && '⚽'}
+                            {getPositionName(player.position)}
+                          </Badge>
+
+                          <Badge variant="outline" className="text-xs flex items-center">
+                            <span>👥 {getTeamName(player.team_id)}</span>
+                          </Badge>
+
+                          {player.birth_date && (
+                            <Badge variant="outline" className="text-xs">
+                              🎂 {new Date().getFullYear() - new Date(player.birth_date).getFullYear()} years
+                            </Badge>
+                          )}
+
+                          {player.nationality && (
+                            <Badge variant="outline" className="text-xs">
+                              🌍 {player.nationality}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Stats Preview */}
+                        <div className="flex items-center space-x-4 mt-3 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <StarIcon className="h-4 w-4 text-yellow-500" />
+                            <span className="font-medium text-gray-700">Rating: 85</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <FireIcon className="h-4 w-4 text-orange-500" />
+                            <span className="font-medium text-gray-700">Form: Good</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => openEditModal(player)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-100"
+                        title="Edit player"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeletePlayer(player.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-600 hover:text-red-600 hover:bg-red-100"
+                        title="Delete player"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => openEditModal(player)}
-                      className="p-2 text-gray-500 hover:text-soccer-green transition-colors"
-                      title="Edit player"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeletePlayer(player.id)}
-                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                      title="Delete player"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+              );
+            })}
+          </div>
+        </Card>
       )}
 
       {/* Player Modal */}

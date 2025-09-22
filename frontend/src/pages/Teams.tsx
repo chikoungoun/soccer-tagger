@@ -5,12 +5,19 @@ import {
   PencilIcon,
   TrashIcon,
   UserGroupIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  MapPinIcon,
+  TrophyIcon,
+  ChevronRightIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { teamsApi } from '../utils/api';
 import { Team, CreateTeamData } from '../types';
 import TeamModal from '../components/TeamModal';
 import { getImageUrl } from '../utils/imageUtils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -81,104 +88,175 @@ const Teams: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-soccer-green"></div>
+          <TrophyIcon className="h-12 w-12 text-soccer-green absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
-          <p className="text-gray-600">Manage your soccer teams</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-8 text-white shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <UserGroupIcon className="h-10 w-10 text-yellow-300" />
+                <h1 className="text-4xl font-bold">Teams</h1>
+              </div>
+              <p className="text-blue-100 text-lg mb-4">Manage your soccer teams and their rosters</p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  {teams.length} Teams
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  Active Season
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0">
+              <Button
+                onClick={() => setShowModal(true)}
+                size="lg"
+                className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg flex items-center"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add New Team
+              </Button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary flex items-center"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add Team
-        </button>
       </div>
 
       {/* Teams Grid */}
       {teams.length === 0 ? (
-        <div className="text-center py-12">
-          <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
-          <p className="text-gray-500 mb-4">Get started by creating your first team</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary"
-          >
-            Create Team
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.map((team) => (
-            <div key={team.id} className="card hover:shadow-lg transition-shadow duration-200">
-              {/* Team Logo/Header */}
-              <div className="text-center mb-4">
-                {team.logo_url ? (
-                  <img
-                    src={getImageUrl(team.logo_url)}
-                    alt={`${team.name} logo`}
-                    className="h-16 w-16 mx-auto rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-16 w-16 mx-auto bg-soccer-green rounded-full flex items-center justify-center">
-                    <UserGroupIcon className="h-8 w-8 text-white" />
-                  </div>
-                )}
-                <h3 className="text-lg font-semibold text-gray-900 mt-3">{team.name}</h3>
-                {team.stadium && (
-                  <p className="text-sm text-gray-500">{team.stadium}</p>
-                )}
-              </div>
-
-              {/* Team Info */}
-              <div className="space-y-2 mb-4">
-                {team.founded_year && (
-                  <p className="text-sm text-gray-600">
-                    <strong>Founded:</strong> {team.founded_year}
-                  </p>
-                )}
-                {team.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2">{team.description}</p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => openEditModal(team)}
-                    className="p-2 text-gray-500 hover:text-soccer-green transition-colors"
-                    title="Edit team"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTeam(team.id)}
-                    className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                    title="Delete team"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-                <Link
-                  to={`/teams/${team.id}`}
-                  className="text-sm btn-primary"
-                >
-                  View Details
-                </Link>
-              </div>
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <UserGroupIcon className="h-10 w-10 text-white" />
             </div>
-          ))}
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No teams yet</h3>
+            <p className="text-gray-600 mb-8 max-w-sm mx-auto">Get started by creating your first team to begin managing your soccer squad</p>
+            <Button
+              onClick={() => setShowModal(true)}
+              size="lg"
+              className="shadow-lg"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Create Your First Team
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {teams.map((team, index) => {
+            const gradients = [
+              'from-blue-500 via-blue-600 to-indigo-700',
+              'from-emerald-500 via-emerald-600 to-teal-700',
+              'from-purple-500 via-purple-600 to-pink-700',
+              'from-orange-500 via-orange-600 to-red-700',
+              'from-cyan-500 via-cyan-600 to-blue-700',
+              'from-rose-500 via-rose-600 to-pink-700',
+              'from-indigo-500 via-indigo-600 to-purple-700',
+              'from-teal-500 via-teal-600 to-emerald-700'
+            ];
+            const gradient = gradients[index % gradients.length];
+
+            return (
+              <Card
+                key={team.id}
+                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden"
+              >
+                {/* Team Header with Gradient */}
+                <div className={`bg-gradient-to-br ${gradient} p-6 text-white relative`}>
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-4">
+                      {team.logo_url ? (
+                        <img
+                          src={getImageUrl(team.logo_url)}
+                          alt={`${team.name} logo`}
+                          className="h-16 w-16 rounded-full object-cover border-4 border-white/30 shadow-lg"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/30 shadow-lg">
+                          <UserGroupIcon className="h-8 w-8 text-white" />
+                        </div>
+                      )}
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => openEditModal(team)}
+                          className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all duration-200"
+                          title="Edit team"
+                        >
+                          <PencilIcon className="h-4 w-4 text-white" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTeam(team.id)}
+                          className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-red-500/50 transition-all duration-200"
+                          title="Delete team"
+                        >
+                          <TrashIcon className="h-4 w-4 text-white" />
+                        </button>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{team.name}</h3>
+                    {team.stadium && (
+                      <div className="flex items-center text-white/90 text-sm">
+                        <MapPinIcon className="h-4 w-4 mr-1" />
+                        <span>{team.stadium}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Team Content */}
+                <CardContent className="p-6">
+                  <div className="space-y-3 mb-6">
+                    {team.founded_year && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Founded</span>
+                        <Badge variant="outline" className="font-semibold">
+                          {team.founded_year}
+                        </Badge>
+                      </div>
+                    )}
+                    {team.description && (
+                      <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
+                        {team.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        <TrophyIcon className="h-3 w-3 mr-1" />
+                        Professional
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        <CalendarDaysIcon className="h-3 w-3 mr-1" />
+                        Active
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* View Details Button */}
+                  <Link to={`/teams/${team.id}`} className="block">
+                    <Button
+                      variant="default"
+                      className="w-full group-hover:shadow-md transition-all duration-200"
+                    >
+                      View Details
+                      <ChevronRightIcon className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
