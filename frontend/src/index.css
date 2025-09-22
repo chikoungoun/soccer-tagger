@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-soccer-green hover:bg-soccer-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-danger {
+    @apply bg-red-card hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-disabled {
+    @apply bg-gray-300 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md border border-gray-200 p-6;
+  }
+
+  .field-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent;
+  }
+
+  .status-scheduled {
+    @apply bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-live {
+    @apply bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium animate-pulse;
+  }
+
+  .status-completed {
+    @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium;
+  }
+}
