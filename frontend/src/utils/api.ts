@@ -43,6 +43,15 @@ export const playersApi = {
   update: (id: number, data: Partial<CreatePlayerData>): Promise<Player> =>
     api.put(`/players/${id}`, data).then(res => res.data),
   delete: (id: number): Promise<void> => api.delete(`/players/${id}`).then(res => res.data),
+  importCsv: (file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/players/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }).then(res => res.data);
+  },
 };
 
 // Fixtures API

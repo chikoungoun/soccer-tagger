@@ -9,7 +9,8 @@ import {
   ShieldCheckIcon,
   FireIcon,
   SparklesIcon,
-  StarIcon
+  StarIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
 import { playersApi, teamsApi } from '../utils/api';
 import { Player, Team, CreatePlayerData } from '../types';
@@ -26,6 +27,8 @@ const Players: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
   const [filters, setFilters] = useState({
     search: '',
     teamId: '',
@@ -100,6 +103,34 @@ const Players: React.FC = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingPlayer(null);
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      console.log('Starting player import for file:', file.name);
+
+      const result = await playersApi.importCsv(file);
+      console.log('Player import result:', result);
+      setImportResult(result);
+
+      // Always refresh players list to show any changes
+      fetchData();
+
+    } catch (error: any) {
+      console.error('Error importing players CSV:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      alert(`Failed to import CSV file: ${errorMessage}`);
+    } finally {
+      setImporting(false);
+      // Reset the file input
+      event.target.value = '';
+    }
   };
 
   const getTeamData = (teamId: number) => {
@@ -198,7 +229,25 @@ const Players: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <div className="mt-6 sm:mt-0">
+            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileImport}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={importing || teams.length === 0}
+                />
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-white/10 text-white border-white/30 hover:bg-white/20 shadow-lg flex items-center"
+                  disabled={importing || teams.length === 0}
+                >
+                  <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
+                  {importing ? 'Importing...' : 'Import CSV'}
+                </Button>
+              </div>
               <Button
                 onClick={() => setShowModal(true)}
                 size="lg"
@@ -212,6 +261,76 @@ const Players: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Import Result */}
+      {importResult && (
+        <Card className="border-l-4 border-l-green-500 bg-green-50 border-green-200">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-green-800 mb-2">
+                  CSV Import Results
+                </h3>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {importResult.summary.imported}
+                    </div>
+                    <div className="text-sm text-green-700">Imported</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {importResult.summary.skipped}
+                    </div>
+                    <div className="text-sm text-yellow-700">Skipped</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">
+                      {importResult.summary.failed}
+                    </div>
+                    <div className="text-sm text-red-700">Failed</div>
+                  </div>
+                </div>
+
+                {importResult.details.imported_players.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="font-medium text-green-800 mb-1">Successfully Imported:</h4>
+                    <div className="text-sm text-green-700">
+                      {importResult.details.imported_players.map((player: any) =>
+                        `${player.name} (#${player.jersey_number}, ${player.team})`
+                      ).join(', ')}
+                    </div>
+                  </div>
+                )}
+
+                {importResult.details.skipped_players.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="font-medium text-yellow-800 mb-1">Skipped (Already Exist):</h4>
+                    <div className="text-sm text-yellow-700">
+                      {importResult.details.skipped_players.map((player: any) => player.reason).join(', ')}
+                    </div>
+                  </div>
+                )}
+
+                {importResult.details.failed_players.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="font-medium text-red-800 mb-1">Failed:</h4>
+                    <div className="text-sm text-red-700">
+                      {importResult.details.failed_players.map((player: any) => `Row ${player.row}: ${player.error}`).join(', ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setImportResult(null)}
+                className="text-green-600 hover:text-green-800"
+              >
+                ✕
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {teams.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
