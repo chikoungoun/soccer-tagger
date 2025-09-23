@@ -75,6 +75,12 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       allowedRoles: ['super_admin']
     },
     {
+      name: t('navigation.analytics'),
+      href: '/analytics',
+      icon: SparklesIcon,
+      allowedRoles: ['super_admin']
+    },
+    {
       name: t('navigation.users'),
       href: '/users',
       icon: Cog6ToothIcon,

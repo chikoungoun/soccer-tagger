@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +13,7 @@ import Fixtures from './pages/Fixtures';
 import Gameweeks from './pages/Gameweeks';
 import MatchCenter from './pages/MatchCenter';
 import Events from './pages/Events';
+import Analytics from './pages/Analytics';
 import Users from './pages/Users';
 import Login from './pages/Login';
 
@@ -20,6 +22,7 @@ function App() {
     <ThemeProvider>
       <Router>
         <AuthProvider>
+          <AnalyticsProvider>
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route
@@ -71,6 +74,14 @@ function App() {
                       }
                     />
                     <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute requiredRole="super_admin">
+                          <Analytics />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/users"
                       element={
                         <ProtectedRoute requiredRole="super_admin">
@@ -85,6 +96,7 @@ function App() {
             }
           />
           </Routes>
+          </AnalyticsProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>
