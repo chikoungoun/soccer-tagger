@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   TrashIcon,
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const Users: React.FC = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -134,7 +136,7 @@ const Users: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <UsersIcon className="h-10 w-10 text-yellow-300" />
-                <h1 className="text-4xl font-bold">User Management</h1>
+                <h1 className="text-4xl font-bold">{t('users.title')}</h1>
               </div>
               <p className="text-purple-100 text-lg mb-4">Manage user accounts and permissions</p>
               <div className="flex flex-wrap gap-3">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   PencilIcon,
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const Players: React.FC = () => {
+  const { t } = useTranslation();
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,7 @@ const Players: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <UserIcon className="h-10 w-10 text-yellow-300" />
-                <h1 className="text-4xl font-bold">Players</h1>
+                <h1 className="text-4xl font-bold">{t('players.title')}</h1>
               </div>
               <p className="text-emerald-100 text-lg mb-4">Manage all players across your teams</p>
               <div className="flex flex-wrap gap-3">
@@ -245,7 +247,7 @@ const Players: React.FC = () => {
                   disabled={importing || teams.length === 0}
                 >
                   <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                  {importing ? 'Importing...' : 'Import CSV'}
+                  {importing ? t('players.importing') : t('players.import')}
                 </Button>
               </div>
               <Button
@@ -255,7 +257,7 @@ const Players: React.FC = () => {
                 disabled={teams.length === 0}
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
-                Add New Player
+{t('players.addNew')}
               </Button>
             </div>
           </div>

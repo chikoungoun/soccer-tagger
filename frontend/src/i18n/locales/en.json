@@ -1,0 +1,160 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "teams": "Teams",
+    "players": "Players",
+    "gameweeks": "Gameweeks",
+    "fixtures": "Fixtures",
+    "users": "Users",
+    "signOut": "Sign out"
+  },
+  "branding": {
+    "appName": "Soccer Tagger",
+    "tagline": "Professional Tagging System"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "tagger": "Tagger"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "create": "Create",
+    "update": "Update",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "status": {
+    "scheduled": "Scheduled",
+    "live": "Live",
+    "completed": "Completed"
+  },
+  "teams": {
+    "title": "Teams Management",
+    "overview": "Teams Overview",
+    "addNew": "Add New Team",
+    "import": "Import CSV",
+    "importing": "Importing...",
+    "viewDetails": "View Details",
+    "editTeam": "Edit Team",
+    "deleteTeam": "Delete Team",
+    "totalTeams": "Total Teams",
+    "activeTeams": "Active Teams",
+    "createSuccess": "Team created successfully",
+    "updateSuccess": "Team updated successfully",
+    "deleteSuccess": "Team deleted successfully",
+    "importSuccess": "Teams imported successfully"
+  },
+  "players": {
+    "title": "Players Management",
+    "addNew": "Add New Player",
+    "import": "Import CSV",
+    "importing": "Importing...",
+    "viewDetails": "View Details",
+    "editPlayer": "Edit Player",
+    "deletePlayer": "Delete Player",
+    "totalPlayers": "Total Players",
+    "activePlayers": "Active Players"
+  },
+  "fixtures": {
+    "title": "Fixtures",
+    "addNew": "Add New Fixture",
+    "viewDetails": "View Details",
+    "editFixture": "Edit Fixture",
+    "deleteFixture": "Delete Fixture",
+    "upcoming": "Upcoming",
+    "today": "Today",
+    "completed": "Completed"
+  },
+  "forms": {
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "messages": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "noData": "No data available",
+    "networkError": "Network error. Please try again.",
+    "unauthorized": "You are not authorized to perform this action"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to Soccer Manager",
+    "overview": "System Overview",
+    "statistics": "Statistics",
+    "recentFixtures": "Recent Fixtures",
+    "upcomingMatches": "Upcoming Matches",
+    "liveMatches": "Live Matches",
+    "totalTeams": "Total Teams",
+    "totalPlayers": "Total Players",
+    "totalFixtures": "Total Fixtures",
+    "activeUsers": "Active Users",
+    "quickActions": "Quick Actions",
+    "viewAll": "View All",
+    "manage": "Manage",
+    "noRecentFixtures": "No recent fixtures available",
+    "systemHealth": "System Health"
+  },
+  "gameweeks": {
+    "title": "Gameweeks Management",
+    "addNew": "Add New Gameweek",
+    "current": "Current Gameweek",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
+    "viewDetails": "View Details",
+    "editGameweek": "Edit Gameweek",
+    "deleteGameweek": "Delete Gameweek"
+  },
+  "users": {
+    "title": "User Management",
+    "addNew": "Add New User",
+    "viewDetails": "View Details",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "role": "Role",
+    "lastLogin": "Last Login"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Sign In",
+    "loginSuccess": "Login successful",
+    "loginError": "Invalid credentials",
+    "welcomeBack": "Welcome back"
+  },
+  "match": {
+    "center": "Match Center",
+    "lineup": "Lineup",
+    "score": "Score",
+    "homeTeam": "Home Team",
+    "awayTeam": "Away Team",
+    "kickoff": "Kickoff",
+    "venue": "Venue",
+    "referee": "Referee",
+    "attendance": "Attendance"
+  }
+}

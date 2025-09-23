@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   PencilIcon,
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { getTeamGradientStyle, getTeamAccentColor } from '../utils/colorUtils';
 
 const Teams: React.FC = () => {
+  const { t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -139,7 +141,7 @@ const Teams: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <UserGroupIcon className="h-10 w-10 text-yellow-300" />
-                <h1 className="text-4xl font-bold">Teams</h1>
+                <h1 className="text-4xl font-bold">{t('teams.title')}</h1>
               </div>
               <p className="text-blue-100 text-lg mb-4">Manage your soccer teams and their rosters</p>
               <div className="flex flex-wrap gap-3">
@@ -167,7 +169,7 @@ const Teams: React.FC = () => {
                   disabled={importing}
                 >
                   <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                  {importing ? 'Importing...' : 'Import CSV'}
+                  {importing ? t('teams.importing') : t('teams.import')}
                 </Button>
               </div>
               <Button
@@ -176,7 +178,7 @@ const Teams: React.FC = () => {
                 className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg flex items-center"
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
-                Add New Team
+{t('teams.addNew')}
               </Button>
             </div>
           </div>
@@ -318,14 +320,14 @@ const Teams: React.FC = () => {
                         <button
                           onClick={() => openEditModal(team)}
                           className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all duration-200"
-                          title="Edit team"
+                          title={t('teams.editTeam')}
                         >
                           <PencilIcon className="h-4 w-4 text-white" />
                         </button>
                         <button
                           onClick={() => handleDeleteTeam(team.id)}
                           className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-red-500/50 transition-all duration-200"
-                          title="Delete team"
+                          title={t('teams.deleteTeam')}
                         >
                           <TrashIcon className="h-4 w-4 text-white" />
                         </button>
@@ -394,7 +396,7 @@ const Teams: React.FC = () => {
                       variant="default"
                       className="w-full group-hover:shadow-md transition-all duration-200"
                     >
-                      View Details
+{t('teams.viewDetails')}
                       <ChevronRightIcon className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
                     </Button>
                   </Link>

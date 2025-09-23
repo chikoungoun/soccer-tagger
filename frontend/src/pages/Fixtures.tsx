@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   PencilIcon,
@@ -42,6 +43,7 @@ interface LineupStatus {
 }
 
 const Fixtures: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [fixtures, setFixtures] = useState<FixtureWithTeams[]>([]);
@@ -337,7 +339,7 @@ const Fixtures: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <CalendarDaysIcon className="h-10 w-10 text-yellow-300" />
-                <h1 className="text-4xl font-bold">Fixtures</h1>
+                <h1 className="text-4xl font-bold">{t('fixtures.title')}</h1>
               </div>
               <p className="text-green-100 text-lg mb-4">Manage match schedules, scores and live events</p>
               <div className="flex flex-wrap gap-3">

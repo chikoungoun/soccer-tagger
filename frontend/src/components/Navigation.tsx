@@ -16,15 +16,18 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
+import LanguageToggle from './LanguageToggle';
 
 const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,37 +38,37 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const navigationItems = [
     {
-      name: 'Dashboard',
+      name: t('navigation.dashboard'),
       href: '/',
       icon: HomeIcon,
       allowedRoles: ['super_admin', 'tagger']
     },
     {
-      name: 'Teams',
+      name: t('navigation.teams'),
       href: '/teams',
       icon: UserGroupIcon,
       allowedRoles: ['super_admin']
     },
     {
-      name: 'Players',
+      name: t('navigation.players'),
       href: '/players',
       icon: UsersIcon,
       allowedRoles: ['super_admin']
     },
     {
-      name: 'Gameweeks',
+      name: t('navigation.gameweeks'),
       href: '/gameweeks',
       icon: ClockIcon,
       allowedRoles: ['super_admin']
     },
     {
-      name: 'Fixtures',
+      name: t('navigation.fixtures'),
       href: '/fixtures',
       icon: CalendarDaysIcon,
       allowedRoles: ['super_admin', 'tagger']
     },
     {
-      name: 'Users',
+      name: t('navigation.users'),
       href: '/users',
       icon: Cog6ToothIcon,
       allowedRoles: ['super_admin']
@@ -90,9 +93,9 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return 'Super Admin';
+        return t('roles.super_admin');
       case 'tagger':
-        return 'Tagger';
+        return t('roles.tagger');
       default:
         return role;
     }
@@ -117,13 +120,16 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <TrophyIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Soccer Tagger</h1>
-                  <div className="text-xs text-emerald-100 font-medium">Professional Tagging System</div>
+                  <h1 className="text-xl font-bold text-white">{t('branding.appName')}</h1>
+                  <div className="text-xs text-emerald-100 font-medium">{t('branding.tagline')}</div>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Language Toggle */}
+              <LanguageToggle />
+
               {/* Theme Toggle */}
               <ThemeToggle />
 
@@ -173,7 +179,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
-                        Sign out
+                        {t('navigation.signOut')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -191,7 +197,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="mb-6">
               <div className="flex items-center space-x-2 px-3 py-2">
                 <SparklesIcon className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Navigation</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('navigation.dashboard')}</span>
               </div>
             </div>
             <ul className="space-y-2">
@@ -232,8 +238,8 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <TrophyIcon className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Soccer Tagger</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Tagging System</p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('branding.appName')}</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{t('branding.tagline')}</p>
                   </div>
                 </div>
               </div>
@@ -285,7 +291,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     className="w-full text-red-600 border-red-200 hover:bg-red-50"
                   >
                     <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
-                    Sign out
+                    {t('navigation.signOut')}
                   </Button>
                 </div>
               </div>

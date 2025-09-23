@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +33,7 @@ const Login: React.FC = () => {
     setError('');
 
     if (!username || !password) {
-      setError('Please enter both username and password');
+      setError(t('auth.loginError'));
       return;
     }
 
@@ -159,7 +161,7 @@ const Login: React.FC = () => {
                   <div className="space-y-2">
                     <label htmlFor="username" className="block text-sm font-medium text-emerald-100">
                       <UserIcon className="h-4 w-4 inline mr-2" />
-                      Username
+{t('auth.username')}
                     </label>
                     <Input
                       id="username"
@@ -177,7 +179,7 @@ const Login: React.FC = () => {
                   <div className="space-y-2">
                     <label htmlFor="password" className="block text-sm font-medium text-emerald-100">
                       <KeyIcon className="h-4 w-4 inline mr-2" />
-                      Password
+{t('auth.password')}
                     </label>
                     <div className="relative">
                       <Input

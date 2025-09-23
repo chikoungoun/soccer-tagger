@@ -1,0 +1,160 @@
+{
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "teams": "Équipes",
+    "players": "Joueurs",
+    "gameweeks": "Journées",
+    "fixtures": "Rencontres",
+    "users": "Utilisateurs",
+    "signOut": "Se déconnecter"
+  },
+  "branding": {
+    "appName": "Soccer Tagger",
+    "tagline": "Système de Marquage Professionnel"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "tagger": "Marqueur"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "refresh": "Actualiser",
+    "create": "Créer",
+    "update": "Mettre à jour",
+    "submit": "Soumettre",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "status": {
+    "scheduled": "Programmé",
+    "live": "En direct",
+    "completed": "Terminé"
+  },
+  "teams": {
+    "title": "Gestion des Équipes",
+    "overview": "Aperçu des Équipes",
+    "addNew": "Ajouter une Nouvelle Équipe",
+    "import": "Importer CSV",
+    "importing": "Importation...",
+    "viewDetails": "Voir les Détails",
+    "editTeam": "Modifier l'Équipe",
+    "deleteTeam": "Supprimer l'Équipe",
+    "totalTeams": "Total des Équipes",
+    "activeTeams": "Équipes Actives",
+    "createSuccess": "Équipe créée avec succès",
+    "updateSuccess": "Équipe mise à jour avec succès",
+    "deleteSuccess": "Équipe supprimée avec succès",
+    "importSuccess": "Équipes importées avec succès"
+  },
+  "players": {
+    "title": "Gestion des Joueurs",
+    "addNew": "Ajouter un Nouveau Joueur",
+    "import": "Importer CSV",
+    "importing": "Importation...",
+    "viewDetails": "Voir les Détails",
+    "editPlayer": "Modifier le Joueur",
+    "deletePlayer": "Supprimer le Joueur",
+    "totalPlayers": "Total des Joueurs",
+    "activePlayers": "Joueurs Actifs"
+  },
+  "fixtures": {
+    "title": "Rencontres",
+    "addNew": "Ajouter une Nouvelle Rencontre",
+    "viewDetails": "Voir les Détails",
+    "editFixture": "Modifier la Rencontre",
+    "deleteFixture": "Supprimer la Rencontre",
+    "upcoming": "À venir",
+    "today": "Aujourd'hui",
+    "completed": "Terminé"
+  },
+  "forms": {
+    "name": "Nom",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "username": "Nom d'utilisateur",
+    "required": "Ce champ est obligatoire",
+    "invalidEmail": "Adresse e-mail invalide",
+    "passwordMismatch": "Les mots de passe ne correspondent pas"
+  },
+  "messages": {
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "info": "Information",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
+    "noData": "Aucune donnée disponible",
+    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue dans Soccer Manager",
+    "overview": "Aperçu du système",
+    "statistics": "Statistiques",
+    "recentFixtures": "Rencontres récentes",
+    "upcomingMatches": "Matchs à venir",
+    "liveMatches": "Matchs en direct",
+    "totalTeams": "Total des équipes",
+    "totalPlayers": "Total des joueurs",
+    "totalFixtures": "Total des rencontres",
+    "activeUsers": "Utilisateurs actifs",
+    "quickActions": "Actions rapides",
+    "viewAll": "Voir tout",
+    "manage": "Gérer",
+    "noRecentFixtures": "Aucune rencontre récente disponible",
+    "systemHealth": "État du système"
+  },
+  "gameweeks": {
+    "title": "Gestion des journées",
+    "addNew": "Ajouter une nouvelle journée",
+    "current": "Journée actuelle",
+    "upcoming": "À venir",
+    "completed": "Terminé",
+    "viewDetails": "Voir les détails",
+    "editGameweek": "Modifier la journée",
+    "deleteGameweek": "Supprimer la journée"
+  },
+  "users": {
+    "title": "Gestion des utilisateurs",
+    "addNew": "Ajouter un nouvel utilisateur",
+    "viewDetails": "Voir les détails",
+    "editUser": "Modifier l'utilisateur",
+    "deleteUser": "Supprimer l'utilisateur",
+    "totalUsers": "Total des utilisateurs",
+    "activeUsers": "Utilisateurs actifs",
+    "role": "Rôle",
+    "lastLogin": "Dernière connexion"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loginButton": "Se connecter",
+    "loginSuccess": "Connexion réussie",
+    "loginError": "Identifiants invalides",
+    "welcomeBack": "Bon retour"
+  },
+  "match": {
+    "center": "Centre de match",
+    "lineup": "Composition",
+    "score": "Score",
+    "homeTeam": "Équipe à domicile",
+    "awayTeam": "Équipe à l'extérieur",
+    "kickoff": "Coup d'envoi",
+    "venue": "Lieu",
+    "referee": "Arbitre",
+    "attendance": "Assistance"
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   PencilIcon,
@@ -28,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const Gameweeks: React.FC = () => {
+  const { t } = useTranslation();
   const [gameweeks, setGameweeks] = useState<Gameweek[]>([]);
   const [allFixtures, setAllFixtures] = useState<FixtureWithTeams[]>([]);
   const [loading, setLoading] = useState(true);
@@ -206,7 +208,7 @@ const Gameweeks: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <CalendarDaysIcon className="h-10 w-10 text-yellow-300" />
-                <h1 className="text-4xl font-bold">Gameweeks</h1>
+                <h1 className="text-4xl font-bold">{t('gameweeks.title')}</h1>
               </div>
               <p className="text-purple-100 text-lg mb-4">Manage gameweeks and generate fixtures</p>
               <div className="flex flex-wrap gap-3">

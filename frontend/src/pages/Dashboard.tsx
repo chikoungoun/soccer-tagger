@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   UserGroupIcon,
   UsersIcon,
@@ -19,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const [stats, setStats] = useState({
     totalTeams: 0,
@@ -68,7 +70,7 @@ const Dashboard: React.FC = () => {
 
   const allStatCards = [
     {
-      name: 'Total Teams',
+      name: t('dashboard.totalTeams'),
       value: stats.totalTeams,
       icon: UserGroupIcon,
       color: 'bg-gradient-to-br from-blue-500 to-blue-600',
@@ -80,7 +82,7 @@ const Dashboard: React.FC = () => {
       allowedRoles: ['super_admin']
     },
     {
-      name: 'Total Players',
+      name: t('dashboard.totalPlayers'),
       value: stats.totalPlayers,
       icon: UsersIcon,
       color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
@@ -92,7 +94,7 @@ const Dashboard: React.FC = () => {
       allowedRoles: ['super_admin']
     },
     {
-      name: 'Total Fixtures',
+      name: t('dashboard.totalFixtures'),
       value: stats.totalFixtures,
       icon: CalendarDaysIcon,
       color: 'bg-gradient-to-br from-purple-500 to-purple-600',
@@ -104,7 +106,7 @@ const Dashboard: React.FC = () => {
       allowedRoles: ['super_admin', 'tagger']
     },
     {
-      name: 'Live Matches',
+      name: t('dashboard.liveMatches'),
       value: stats.liveMatches,
       icon: PlayIcon,
       color: 'bg-gradient-to-br from-red-500 to-red-600',
@@ -148,7 +150,7 @@ const Dashboard: React.FC = () => {
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-4">
             <SparklesIcon className="h-8 w-8 text-yellow-300" />
-            <h1 className="text-4xl font-bold">Welcome to Soccer Manager</h1>
+            <h1 className="text-4xl font-bold">{t('dashboard.welcome')}</h1>
           </div>
           <p className="text-green-100 text-lg mb-6">Manage your teams, players, and fixtures all in one place</p>
           <div className="flex flex-wrap gap-3">
@@ -208,7 +210,7 @@ const Dashboard: React.FC = () => {
             <div>
               <CardTitle className="text-2xl text-gray-900 flex items-center space-x-2">
                 <CalendarDaysIcon className="h-6 w-6 text-soccer-green" />
-                <span>Recent Fixtures</span>
+                <span>{t('dashboard.recentFixtures')}</span>
               </CardTitle>
               <CardDescription className="mt-1">
                 Latest matches and upcoming games
