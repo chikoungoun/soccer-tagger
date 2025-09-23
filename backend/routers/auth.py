@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -12,8 +12,10 @@ from auth import (
     get_password_hash,
     get_current_active_user,
     require_super_admin,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_token_from_cookie
 )
+from utils.session_manager import SessionManager
 
 router = APIRouter()
 
@@ -36,6 +38,17 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    screen_resolution: Optional[str] = None
+
+class ActivityRequest(BaseModel):
+    activity_type: str  # page_visit, action, api_call
+    page_url: Optional[str] = None
+    action_name: Optional[str] = None
+    additional_data: Optional[dict] = None
 
 @router.post("/register", response_model=UserResponse)
 async def register_user(
@@ -82,22 +95,52 @@ async def register_user(
 
 @router.post("/login", response_model=UserResponse)
 async def login_for_access_token(
+    request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """Login endpoint with httpOnly cookie"""
+    """Login endpoint with httpOnly cookie and session tracking"""
+
+    # Log login attempt
     user = authenticate_user(db, form_data.username, form_data.password)
+
     if not user:
+        # Log failed attempt
+        SessionManager.log_login_attempt(
+            db=db,
+            username=form_data.username,
+            request=request,
+            success=False,
+            failure_reason="invalid_credentials"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Log successful attempt
+    SessionManager.log_login_attempt(
+        db=db,
+        username=form_data.username,
+        request=request,
+        success=True,
+        user_id=user.id
+    )
+
+    # Create session
+    session = SessionManager.create_session(
+        db=db,
+        user=user,
+        request=request,
+        screen_resolution=getattr(form_data, 'screen_resolution', None)
+    )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "role": user.role},
+        data={"sub": user.username, "role": user.role, "session_token": session.session_token},
         expires_delta=access_token_expires
     )
 
@@ -114,8 +157,28 @@ async def login_for_access_token(
     return user
 
 @router.post("/logout")
-async def logout(response: Response):
-    """Logout endpoint that clears the httpOnly cookie"""
+async def logout(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """Logout endpoint that clears the httpOnly cookie and ends session"""
+    try:
+        # Get session token from cookie
+        token = get_token_from_cookie(request)
+        from jose import jwt
+        from auth import SECRET_KEY, ALGORITHM
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        session_token = payload.get("session_token")
+
+        if session_token:
+            # End the session
+            SessionManager.end_session(db, session_token)
+    except:
+        # If token extraction fails, just clear the cookie
+        pass
+
     response.delete_cookie(key="access_token", samesite="lax")
     return {"message": "Successfully logged out"}
 
@@ -177,3 +240,138 @@ async def delete_user(
     db.commit()
 
     return {"message": "User deleted successfully"}
+
+# Activity tracking endpoints
+@router.post("/track-activity")
+async def track_activity(
+    request: Request,
+    activity_data: ActivityRequest,
+    db: Session = Depends(get_db)
+):
+    """Track user activity"""
+    try:
+        # Get session token from cookie
+        token = get_token_from_cookie(request)
+        from jose import jwt
+        from auth import SECRET_KEY, ALGORITHM
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        session_token = payload.get("session_token")
+
+        if session_token:
+            # Update activity
+            success = SessionManager.update_activity(
+                db=db,
+                session_token=session_token,
+                activity_type=activity_data.activity_type,
+                page_url=activity_data.page_url,
+                action_name=activity_data.action_name,
+                additional_data=activity_data.additional_data
+            )
+
+            if success:
+                return {"message": "Activity tracked successfully"}
+            else:
+                return {"message": "Session not found"}
+        else:
+            return {"message": "No session token found"}
+
+    except Exception as e:
+        return {"message": f"Error tracking activity: {str(e)}"}
+
+# Analytics endpoints (super admin only)
+@router.get("/analytics/sessions")
+async def get_session_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+    limit: int = 100
+):
+    """Get session analytics"""
+    from models import UserSession
+    from sqlalchemy import desc
+
+    sessions = db.query(UserSession).order_by(desc(UserSession.login_time)).limit(limit).all()
+
+    return {
+        "sessions": [
+            {
+                "id": session.id,
+                "user_id": session.user_id,
+                "username": session.user.username,
+                "login_time": session.login_time,
+                "logout_time": session.logout_time,
+                "last_activity": session.last_activity,
+                "is_active": session.is_active,
+                "device_type": session.device_type,
+                "browser_name": session.browser_name,
+                "browser_version": session.browser_version,
+                "os_name": session.os_name,
+                "os_version": session.os_version,
+                "ip_address": session.ip_address,
+                "pages_visited": session.pages_visited,
+                "actions_performed": session.actions_performed,
+                "session_duration": session.session_duration
+            }
+            for session in sessions
+        ]
+    }
+
+@router.get("/analytics/login-attempts")
+async def get_login_attempts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+    limit: int = 100
+):
+    """Get login attempts analytics"""
+    from models import LoginAttempt
+    from sqlalchemy import desc
+
+    attempts = db.query(LoginAttempt).order_by(desc(LoginAttempt.timestamp)).limit(limit).all()
+
+    return {
+        "login_attempts": [
+            {
+                "id": attempt.id,
+                "username": attempt.username,
+                "ip_address": attempt.ip_address,
+                "success": attempt.success,
+                "failure_reason": attempt.failure_reason,
+                "timestamp": attempt.timestamp,
+                "user_id": attempt.user_id
+            }
+            for attempt in attempts
+        ]
+    }
+
+@router.get("/analytics/user-activity")
+async def get_user_activity(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+    user_id: Optional[int] = None,
+    limit: int = 100
+):
+    """Get user activity analytics"""
+    from models import UserActivity
+    from sqlalchemy import desc
+
+    query = db.query(UserActivity)
+    if user_id:
+        query = query.filter(UserActivity.user_id == user_id)
+
+    activities = query.order_by(desc(UserActivity.timestamp)).limit(limit).all()
+
+    return {
+        "activities": [
+            {
+                "id": activity.id,
+                "user_id": activity.user_id,
+                "session_id": activity.session_id,
+                "activity_type": activity.activity_type,
+                "page_url": activity.page_url,
+                "action_name": activity.action_name,
+                "additional_data": activity.additional_data,
+                "timestamp": activity.timestamp
+            }
+            for activity in activities
+        ]
+    }

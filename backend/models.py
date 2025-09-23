@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text, Date
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text, Date, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -14,6 +14,9 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
 
 class Team(Base):
     __tablename__ = "teams"
@@ -130,3 +133,73 @@ class MatchTimer(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     fixture = relationship("Fixture")
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    session_token = Column(String(255), unique=True, index=True, nullable=False)
+    login_time = Column(DateTime(timezone=True), server_default=func.now())
+    logout_time = Column(DateTime(timezone=True), nullable=True)
+    last_activity = Column(DateTime(timezone=True), server_default=func.now())
+    is_active = Column(Boolean, default=True)
+
+    # Device and browser information
+    ip_address = Column(String(45), nullable=True)  # Support both IPv4 and IPv6
+    user_agent = Column(Text, nullable=True)
+    device_type = Column(String(50), nullable=True)  # mobile, desktop, tablet
+    browser_name = Column(String(100), nullable=True)
+    browser_version = Column(String(50), nullable=True)
+    os_name = Column(String(100), nullable=True)
+    os_version = Column(String(50), nullable=True)
+    screen_resolution = Column(String(20), nullable=True)  # e.g., "1920x1080"
+
+    # Geolocation information
+    country = Column(String(100), nullable=True)
+    country_code = Column(String(2), nullable=True)  # ISO 3166-1 alpha-2
+    region = Column(String(100), nullable=True)
+    city = Column(String(100), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    timezone = Column(String(50), nullable=True)
+
+    # Session metrics
+    pages_visited = Column(Integer, default=0)
+    actions_performed = Column(Integer, default=0)
+    session_duration = Column(Integer, default=0)  # in seconds
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", back_populates="sessions")
+
+class UserActivity(Base):
+    __tablename__ = "user_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("user_sessions.id"), nullable=True)
+    activity_type = Column(String(50), nullable=False)  # page_visit, action, api_call
+    page_url = Column(String(500), nullable=True)
+    action_name = Column(String(100), nullable=True)  # click, form_submit, search, etc.
+    additional_data = Column(Text, nullable=True)  # JSON string for extra data
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    session = relationship("UserSession")
+
+class LoginAttempt(Base):
+    __tablename__ = "login_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), nullable=False)
+    ip_address = Column(String(45), nullable=False)
+    user_agent = Column(Text, nullable=True)
+    success = Column(Boolean, nullable=False)
+    failure_reason = Column(String(100), nullable=True)  # invalid_username, invalid_password, account_locked
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    # If successful, link to user
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user = relationship("User")
