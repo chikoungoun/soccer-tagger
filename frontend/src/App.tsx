@@ -11,6 +11,7 @@ import Players from './pages/Players';
 import Fixtures from './pages/Fixtures';
 import Gameweeks from './pages/Gameweeks';
 import MatchCenter from './pages/MatchCenter';
+import Events from './pages/Events';
 import Users from './pages/Users';
 import Login from './pages/Login';
 
@@ -58,6 +59,14 @@ function App() {
                       element={
                         <ProtectedRoute requiredRole="super_admin">
                           <Gameweeks />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/events"
+                      element={
+                        <ProtectedRoute requiredRole="super_admin">
+                          <Events />
                         </ProtectedRoute>
                       }
                     />

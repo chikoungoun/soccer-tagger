@@ -13,7 +13,8 @@ import {
   Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
-  SparklesIcon
+  SparklesIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +67,12 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       href: '/fixtures',
       icon: CalendarDaysIcon,
       allowedRoles: ['super_admin', 'tagger']
+    },
+    {
+      name: t('navigation.events'),
+      href: '/events',
+      icon: ChartBarIcon,
+      allowedRoles: ['super_admin']
     },
     {
       name: t('navigation.users'),
