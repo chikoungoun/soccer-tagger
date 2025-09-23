@@ -21,6 +21,8 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, index=True, nullable=False)
     logo_url = Column(String(255), nullable=True)
+    primary_color = Column(String(7), nullable=True)  # Hex color code like #FF0000
+    secondary_color = Column(String(7), nullable=True)  # Hex color code like #0000FF
     founded_year = Column(Integer, nullable=True)
     stadium = Column(String(100), nullable=True)
     description = Column(Text, nullable=True)

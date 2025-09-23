@@ -5,6 +5,8 @@ from typing import List, Optional
 class TeamBase(BaseModel):
     name: str
     logo_url: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
     founded_year: Optional[int] = None
     stadium: Optional[str] = None
     description: Optional[str] = None
@@ -15,6 +17,8 @@ class TeamCreate(TeamBase):
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
     logo_url: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
     founded_year: Optional[int] = None
     stadium: Optional[str] = None
     description: Optional[str] = None
