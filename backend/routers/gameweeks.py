@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import date, datetime, time, timedelta
 import random
 from database import get_db
-from models import Gameweek, Team, Fixture
+from models import Gameweek, Team, Fixture, User
 from schemas import (
     Gameweek as GameweekSchema,
     GameweekCreate,
@@ -12,6 +12,8 @@ from schemas import (
     GameweekWithFixtures,
     FixtureCreate
 )
+from auth import get_current_active_user
+from utils.notification_manager import NotificationManager
 
 router = APIRouter()
 
@@ -32,11 +34,19 @@ def get_gameweek(gameweek_id: int, db: Session = Depends(get_db)):
     return gameweek
 
 @router.post("/", response_model=GameweekSchema)
-def create_gameweek(gameweek: GameweekCreate, db: Session = Depends(get_db)):
+def create_gameweek(
+    gameweek: GameweekCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     db_gameweek = Gameweek(**gameweek.dict())
     db.add(db_gameweek)
     db.commit()
     db.refresh(db_gameweek)
+
+    # Create notifications for gameweek creation
+    NotificationManager.notify_gameweek_created(db, db_gameweek, current_user.id)
+
     return db_gameweek
 
 @router.put("/{gameweek_id}", response_model=GameweekSchema)

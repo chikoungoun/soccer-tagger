@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 from database import get_db
-from models import Fixture, Team
+from models import Fixture, Team, User
 from schemas import Fixture as FixtureSchema, FixtureCreate, FixtureUpdate, FixtureWithTeams
+from auth import get_current_active_user
+from utils.notification_manager import NotificationManager
 
 router = APIRouter()
 
@@ -37,7 +39,11 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     return fixture
 
 @router.post("/", response_model=FixtureSchema)
-def create_fixture(fixture: FixtureCreate, db: Session = Depends(get_db)):
+def create_fixture(
+    fixture: FixtureCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     # Check if both teams exist
     home_team = db.query(Team).filter(Team.id == fixture.home_team_id).first()
     away_team = db.query(Team).filter(Team.id == fixture.away_team_id).first()
@@ -53,6 +59,17 @@ def create_fixture(fixture: FixtureCreate, db: Session = Depends(get_db)):
     db.add(db_fixture)
     db.commit()
     db.refresh(db_fixture)
+
+    # Load relationships for notification
+    db.refresh(db_fixture)
+    db_fixture = db.query(Fixture).options(
+        joinedload(Fixture.home_team),
+        joinedload(Fixture.away_team)
+    ).filter(Fixture.id == db_fixture.id).first()
+
+    # Create notifications for fixture creation
+    NotificationManager.notify_fixture_created(db, db_fixture, current_user.id)
+
     return db_fixture
 
 @router.put("/{fixture_id}", response_model=FixtureSchema)

@@ -16,6 +16,7 @@ from auth import (
     get_token_from_cookie
 )
 from utils.session_manager import SessionManager
+from utils.notification_manager import NotificationManager
 
 router = APIRouter()
 
@@ -375,3 +376,72 @@ async def get_user_activity(
             for activity in activities
         ]
     }
+
+# Notification endpoints
+@router.get("/notifications")
+async def get_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    unread_only: bool = False,
+    limit: int = 50
+):
+    """Get notifications for current user"""
+    notifications = NotificationManager.get_user_notifications(
+        db=db,
+        user_id=current_user.id,
+        unread_only=unread_only,
+        limit=limit
+    )
+
+    return {
+        "notifications": [
+            {
+                "id": notification.id,
+                "title": notification.title,
+                "message": notification.message,
+                "type": notification.type,
+                "is_read": notification.is_read,
+                "fixture_id": notification.fixture_id,
+                "gameweek_id": notification.gameweek_id,
+                "created_at": notification.created_at,
+                "read_at": notification.read_at
+            }
+            for notification in notifications
+        ]
+    }
+
+@router.get("/notifications/unread-count")
+async def get_unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get count of unread notifications"""
+    count = NotificationManager.get_unread_count(db=db, user_id=current_user.id)
+    return {"unread_count": count}
+
+@router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Mark a notification as read"""
+    success = NotificationManager.mark_notification_read(
+        db=db,
+        notification_id=notification_id,
+        user_id=current_user.id
+    )
+
+    if success:
+        return {"message": "Notification marked as read"}
+    else:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+@router.patch("/notifications/mark-all-read")
+async def mark_all_notifications_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Mark all notifications as read for current user"""
+    count = NotificationManager.mark_all_read(db=db, user_id=current_user.id)
+    return {"message": f"Marked {count} notifications as read"}

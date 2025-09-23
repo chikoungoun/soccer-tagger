@@ -203,3 +203,25 @@ class LoginAttempt(Base):
     # If successful, link to user
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     user = relationship("User")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String(50), nullable=False)  # fixture_created, gameweek_created, match_assigned, etc.
+    is_read = Column(Boolean, default=False)
+
+    # Optional reference to related entities
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"), nullable=True)
+    gameweek_id = Column(Integer, ForeignKey("gameweeks.id"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    read_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    fixture = relationship("Fixture")
+    gameweek = relationship("Gameweek")
