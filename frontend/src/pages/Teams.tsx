@@ -19,6 +19,7 @@ import { getImageUrl } from '../utils/imageUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getTeamGradientStyle, getTeamAccentColor } from '../utils/colorUtils';
 
 const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -272,7 +273,8 @@ const Teams: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {teams.map((team, index) => {
-            const gradients = [
+            // Use team colors if available, otherwise fall back to default gradients
+            const fallbackGradients = [
               'from-blue-500 via-blue-600 to-indigo-700',
               'from-emerald-500 via-emerald-600 to-teal-700',
               'from-purple-500 via-purple-600 to-pink-700',
@@ -282,15 +284,22 @@ const Teams: React.FC = () => {
               'from-indigo-500 via-indigo-600 to-purple-700',
               'from-teal-500 via-teal-600 to-emerald-700'
             ];
-            const gradient = gradients[index % gradients.length];
+            const fallbackGradient = fallbackGradients[index % fallbackGradients.length];
+
+            // Use team colors if both primary and secondary are defined
+            const hasTeamColors = team.primary_color && team.secondary_color;
+            const teamGradientStyle = hasTeamColors ? getTeamGradientStyle(team, 'to bottom right') : null;
 
             return (
               <Card
                 key={team.id}
                 className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden"
               >
-                {/* Team Header with Gradient */}
-                <div className={`bg-gradient-to-br ${gradient} p-6 text-white relative`}>
+                {/* Team Header with Dynamic Gradient */}
+                <div
+                  className={hasTeamColors ? "p-6 text-white relative" : `bg-gradient-to-br ${fallbackGradient} p-6 text-white relative`}
+                  style={teamGradientStyle || undefined}
+                >
                   <div className="absolute inset-0 bg-black/10"></div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-4">
@@ -333,7 +342,13 @@ const Teams: React.FC = () => {
                 </div>
 
                 {/* Team Content */}
-                <CardContent className="p-6">
+                <CardContent
+                  className="p-6 border-t-4"
+                  style={{
+                    borderTopColor: hasTeamColors ? team.primary_color : '#e5e7eb',
+                    backgroundColor: hasTeamColors ? getTeamAccentColor(team, 0.02) : undefined
+                  }}
+                >
                   <div className="space-y-3 mb-6">
                     {team.founded_year && (
                       <div className="flex items-center justify-between">
@@ -349,6 +364,19 @@ const Teams: React.FC = () => {
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2">
+                      {hasTeamColors && (
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2 py-1">
+                          <div
+                            className="w-3 h-3 rounded-full border border-gray-300"
+                            style={{ backgroundColor: team.primary_color }}
+                          ></div>
+                          <div
+                            className="w-3 h-3 rounded-full border border-gray-300"
+                            style={{ backgroundColor: team.secondary_color }}
+                          ></div>
+                          <span className="text-xs text-gray-600 ml-1">Team Colors</span>
+                        </div>
+                      )}
                       <Badge variant="secondary" className="text-xs">
                         <TrophyIcon className="h-3 w-3 mr-1" />
                         Professional

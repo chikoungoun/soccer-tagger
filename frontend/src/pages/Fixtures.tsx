@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getFixtureGradientStyle, getTeamAccentColor, getContrastTextColor } from '../utils/colorUtils';
 
 interface LineupStatus {
   [fixtureId: number]: {
@@ -496,9 +497,12 @@ const Fixtures: React.FC = () => {
                 key={fixture.id}
                 className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg overflow-hidden"
               >
-                {/* Status Header */}
-                <div className={`bg-gradient-to-r ${statusColor} p-4 text-white relative`}>
-                  <div className="absolute inset-0 bg-black/10"></div>
+                {/* Status Header with Team Colors */}
+                <div
+                  className="p-4 text-white relative overflow-hidden"
+                  style={getFixtureGradientStyle(fixture.home_team, fixture.away_team)}
+                >
+                  <div className="absolute inset-0 bg-black/20"></div>
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(fixture.status)}
@@ -529,7 +533,13 @@ const Fixtures: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
                     {/* Home Team */}
                     <div className="lg:col-span-2 text-center lg:text-right">
-                      <div className="flex items-center justify-center lg:justify-end space-x-3 mb-1">
+                      <div
+                        className="flex items-center justify-center lg:justify-end space-x-3 mb-1 p-3 rounded-lg border-l-4"
+                        style={{
+                          backgroundColor: getTeamAccentColor(fixture.home_team, 0.05),
+                          borderLeftColor: fixture.home_team.primary_color || '#3B82F6'
+                        }}
+                      >
                         {fixture.home_team.logo_url && (
                           <img
                             src={`http://localhost:8000${fixture.home_team.logo_url}`}
@@ -572,7 +582,13 @@ const Fixtures: React.FC = () => {
 
                     {/* Away Team */}
                     <div className="lg:col-span-2 text-center lg:text-left">
-                      <div className="flex items-center justify-center lg:justify-start space-x-3 mb-1">
+                      <div
+                        className="flex items-center justify-center lg:justify-start space-x-3 mb-1 p-3 rounded-lg border-r-4"
+                        style={{
+                          backgroundColor: getTeamAccentColor(fixture.away_team, 0.05),
+                          borderRightColor: fixture.away_team.primary_color || '#EF4444'
+                        }}
+                      >
                         <h3 className="text-lg font-bold text-gray-900">
                           {fixture.away_team.name}
                         </h3>

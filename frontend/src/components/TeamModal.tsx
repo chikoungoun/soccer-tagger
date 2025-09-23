@@ -13,6 +13,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
   const [formData, setFormData] = useState<CreateTeamData>({
     name: '',
     logo_url: '',
+    primary_color: '',
+    secondary_color: '',
     founded_year: undefined,
     stadium: '',
     description: ''
@@ -25,6 +27,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
       setFormData({
         name: team.name,
         logo_url: team.logo_url || '',
+        primary_color: team.primary_color || '',
+        secondary_color: team.secondary_color || '',
         founded_year: team.founded_year,
         stadium: team.stadium || '',
         description: team.description || ''
@@ -40,6 +44,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
     const dataToSave = {
       ...formData,
       logo_url: formData.logo_url || undefined,
+      primary_color: formData.primary_color || undefined,
+      secondary_color: formData.secondary_color || undefined,
       founded_year: formData.founded_year || undefined,
       stadium: formData.stadium || undefined,
       description: formData.description || undefined
@@ -202,6 +208,56 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose }) => {
                   onChange={handleChange}
                   className="field-input"
                   placeholder="Or enter logo URL manually"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="primary_color" className="block text-sm font-medium text-gray-700 mb-1">
+                Primary Color
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  id="primary_color"
+                  name="primary_color"
+                  value={formData.primary_color || '#000000'}
+                  onChange={handleChange}
+                  className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={formData.primary_color || ''}
+                  onChange={handleChange}
+                  name="primary_color"
+                  placeholder="#FF0000"
+                  className="field-input flex-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="secondary_color" className="block text-sm font-medium text-gray-700 mb-1">
+                Secondary Color
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  id="secondary_color"
+                  name="secondary_color"
+                  value={formData.secondary_color || '#ffffff'}
+                  onChange={handleChange}
+                  className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={formData.secondary_color || ''}
+                  onChange={handleChange}
+                  name="secondary_color"
+                  placeholder="#0000FF"
+                  className="field-input flex-1"
                 />
               </div>
             </div>

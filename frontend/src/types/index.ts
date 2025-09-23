@@ -2,6 +2,8 @@ export interface Team {
   id: number;
   name: string;
   logo_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
   founded_year?: number;
   stadium?: string;
   description?: string;
@@ -50,6 +52,8 @@ export interface TeamWithPlayers extends Team {
 export interface CreateTeamData {
   name: string;
   logo_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
   founded_year?: number;
   stadium?: string;
   description?: string;
