@@ -3,25 +3,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  // Base styles - keeping your existing button foundation
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  // Enhanced base styles with mobile-first touch accessibility
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95 touch-manipulation select-none",
   {
     variants: {
       variant: {
-        // Keeping your existing btn-primary style as default
-        default: "bg-soccer-green text-white hover:bg-soccer-dark shadow",
-        // Keeping your existing btn-secondary style
-        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300",
-        // Additional Shadcn variants that won't conflict
-        outline: "border border-soccer-green text-soccer-green hover:bg-soccer-green hover:text-white",
-        ghost: "text-soccer-green hover:bg-soccer-green/10",
-        destructive: "bg-red-card text-white hover:bg-red-card/90",
+        // Enhanced with better touch feedback
+        default: "bg-soccer-green text-white hover:bg-soccer-dark shadow-md hover:shadow-lg active:shadow-sm",
+        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300 shadow-sm hover:shadow-md active:shadow-none",
+        outline: "border border-soccer-green text-soccer-green hover:bg-soccer-green hover:text-white shadow-sm hover:shadow-md",
+        ghost: "text-soccer-green hover:bg-soccer-green/10 active:bg-soccer-green/20",
+        destructive: "bg-red-card text-white hover:bg-red-card/90 shadow-md hover:shadow-lg active:shadow-sm",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        // Mobile-optimized minimum 44px touch targets
+        default: "h-11 px-4 py-2 min-h-[44px]",
+        sm: "h-10 rounded-md px-3 min-h-[40px]",
+        lg: "h-12 rounded-md px-8 min-h-[48px]",
+        icon: "h-11 w-11 min-h-[44px] min-w-[44px]",
+        mobile: "h-12 px-6 py-3 min-h-[48px] text-base",
       },
     },
     defaultVariants: {

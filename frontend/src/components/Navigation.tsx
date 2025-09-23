@@ -140,10 +140,10 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* Theme Toggle */}
               <ThemeToggle />
 
-              {/* Mobile menu button */}
+              {/* Enhanced Mobile menu button */}
               <button
                 type="button"
-                className="md:hidden p-2 rounded-lg text-white hover:bg-white/20 transition-colors"
+                className="md:hidden p-3 rounded-xl text-white hover:bg-white/20 transition-all duration-200 active:scale-95 min-h-[44px] min-w-[44px] touch-manipulation"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
@@ -204,7 +204,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="mb-6">
               <div className="flex items-center space-x-2 px-3 py-2">
                 <SparklesIcon className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('navigation.dashboard')}</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Navigation</span>
               </div>
             </div>
             <ul className="space-y-2">
@@ -306,31 +306,43 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         )}
 
-        {/* Mobile Bottom Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200/50 z-40 shadow-2xl">
-          <nav className="flex justify-around py-2">
-            {allowedNavItems.slice(0, 5).map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex flex-col items-center py-2 px-2 text-xs transition-all duration-200 ${
-                    isActive(item.href)
-                      ? 'text-emerald-600 scale-110'
-                      : 'text-gray-600 hover:text-emerald-500'
-                  }`}
-                >
-                  <div className={`p-1 rounded-lg ${
-                    isActive(item.href) ? 'bg-emerald-100' : ''
-                  }`}>
-                    <Icon className="h-5 w-5 mb-1" />
-                  </div>
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
+        {/* Enhanced Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-700/50 z-40 shadow-2xl">
+          <div className="safe-area-inset-bottom">
+            <nav className="flex justify-around py-1">
+              {allowedNavItems.slice(0, 5).map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex flex-col items-center py-3 px-3 text-xs transition-all duration-200 rounded-xl min-h-[60px] min-w-[60px] active:scale-95 ${
+                      active
+                        ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 scale-105'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-emerald-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <div className={`relative p-2 rounded-xl transition-all duration-200 ${
+                      active
+                        ? 'bg-emerald-100 dark:bg-emerald-900/50 shadow-sm'
+                        : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                    }`}>
+                      <Icon className="h-5 w-5" />
+                      {active && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      )}
+                    </div>
+                    <span className={`mt-1 font-medium truncate max-w-[50px] ${
+                      active ? 'text-emerald-700 dark:text-emerald-300' : ''
+                    }`}>
+                      {item.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
 
         {/* Main content */}
