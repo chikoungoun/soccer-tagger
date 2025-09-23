@@ -19,6 +19,15 @@ export const teamsApi = {
   update: (id: number, data: Partial<CreateTeamData>): Promise<Team> =>
     api.put(`/teams/${id}`, data).then(res => res.data),
   delete: (id: number): Promise<void> => api.delete(`/teams/${id}`).then(res => res.data),
+  importCsv: (file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/teams/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }).then(res => res.data);
+  },
 };
 
 // Players API
