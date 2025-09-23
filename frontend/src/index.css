@@ -36,11 +36,11 @@ body {
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-md border border-gray-200 p-6;
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6;
   }
 
   .field-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-soccer-green focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
   }
 
   .status-scheduled {

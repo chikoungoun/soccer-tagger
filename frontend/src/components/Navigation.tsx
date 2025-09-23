@@ -19,6 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from './ThemeToggle';
 
 const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -105,7 +106,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
       <header className="bg-gradient-to-r from-soccer-green via-emerald-600 to-teal-700 shadow-2xl border-b border-emerald-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,6 +124,9 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* Mobile menu button */}
               <button
                 type="button"
@@ -182,12 +186,12 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-64 bg-white/70 backdrop-blur-sm shadow-xl border-r border-gray-200/50 min-h-screen">
+        <aside className="hidden md:block w-64 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm shadow-xl border-r border-gray-200/50 dark:border-gray-700/50 min-h-screen">
           <nav className="mt-8 px-4">
             <div className="mb-6">
               <div className="flex items-center space-x-2 px-3 py-2">
                 <SparklesIcon className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-700">Navigation</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Navigation</span>
               </div>
             </div>
             <ul className="space-y-2">
@@ -200,12 +204,12 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                         isActive(item.href)
                           ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg scale-105'
-                          : 'text-gray-600 hover:bg-gray-100/70 hover:text-gray-900 hover:scale-105'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white hover:scale-105'
                       }`}
                     >
                       <Icon
                         className={`mr-3 h-5 w-5 ${
-                          isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-emerald-500'
+                          isActive(item.href) ? 'text-white' : 'text-gray-400 dark:text-gray-500 group-hover:text-emerald-500'
                         }`}
                       />
                       {item.name}
@@ -221,15 +225,15 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {mobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-            <div className="absolute top-0 left-0 w-80 h-full bg-white shadow-2xl">
-              <div className="p-6 border-b border-gray-200">
+            <div className="absolute top-0 left-0 w-80 h-full bg-white dark:bg-gray-800 shadow-2xl">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                     <TrophyIcon className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">Soccer Tagger</h2>
-                    <p className="text-sm text-gray-600">Tagging System</p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Soccer Tagger</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Tagging System</p>
                   </div>
                 </div>
               </div>
@@ -246,7 +250,7 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                           className={`group flex items-center px-4 py-4 text-base font-medium rounded-xl transition-all duration-200 ${
                             isActive(item.href)
                               ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                           }`}
                         >
                           <Icon
