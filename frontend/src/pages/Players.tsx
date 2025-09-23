@@ -610,14 +610,13 @@ const Players: React.FC = () => {
       )}
 
       {/* Player Modal */}
-      {showModal && (
-        <PlayerModal
-          player={editingPlayer}
-          teams={teams}
-          onSave={editingPlayer ? handleUpdatePlayer : handleCreatePlayer}
-          onClose={closeModal}
-        />
-      )}
+      <PlayerModal
+        player={editingPlayer}
+        teams={teams}
+        onSave={editingPlayer ? handleUpdatePlayer : handleCreatePlayer}
+        onClose={closeModal}
+        isOpen={showModal}
+      />
     </div>
   );
 };

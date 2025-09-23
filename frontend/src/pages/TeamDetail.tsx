@@ -347,15 +347,14 @@ const TeamDetail: React.FC = () => {
       </div>
 
       {/* Player Modal */}
-      {showPlayerModal && (
-        <PlayerModal
-          player={editingPlayer}
-          teamId={!isTransferMode ? parseInt(id!) : undefined}
-          teams={isTransferMode ? allTeams : undefined}
-          onSave={editingPlayer ? handleUpdatePlayer : handleCreatePlayer}
-          onClose={closePlayerModal}
-        />
-      )}
+      <PlayerModal
+        player={editingPlayer}
+        teamId={!isTransferMode ? parseInt(id!) : undefined}
+        teams={isTransferMode ? allTeams : undefined}
+        onSave={editingPlayer ? handleUpdatePlayer : handleCreatePlayer}
+        onClose={closePlayerModal}
+        isOpen={showPlayerModal}
+      />
     </div>
   );
 };

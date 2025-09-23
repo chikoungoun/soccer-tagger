@@ -689,15 +689,14 @@ const Fixtures: React.FC = () => {
       )}
 
       {/* Fixture Modal */}
-      {showFixtureModal && (
-        <FixtureModal
-          fixture={editingFixture}
-          teams={teams}
-          gameweeks={gameweeks}
-          onSave={editingFixture ? handleUpdateFixture : handleCreateFixture}
-          onClose={closeModals}
-        />
-      )}
+      <FixtureModal
+        fixture={editingFixture}
+        teams={teams}
+        gameweeks={gameweeks}
+        onSave={editingFixture ? handleUpdateFixture : handleCreateFixture}
+        onClose={closeModals}
+        isOpen={showFixtureModal}
+      />
 
       {/* Score Modal */}
       {showScoreModal && scoringFixture && (

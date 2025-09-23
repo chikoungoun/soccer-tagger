@@ -408,13 +408,12 @@ const Teams: React.FC = () => {
       )}
 
       {/* Team Modal */}
-      {showModal && (
-        <TeamModal
-          team={editingTeam}
-          onSave={editingTeam ? handleUpdateTeam : handleCreateTeam}
-          onClose={closeModal}
-        />
-      )}
+      <TeamModal
+        team={editingTeam}
+        onSave={editingTeam ? handleUpdateTeam : handleCreateTeam}
+        onClose={closeModal}
+        isOpen={showModal}
+      />
     </div>
   );
 };
