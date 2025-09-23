@@ -30,6 +30,7 @@ interface TeamLineup {
   team: {
     id: number;
     name: string;
+    logo_url?: string;
   };
   starters: Array<{
     player: {
@@ -142,7 +143,10 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
     const homeSubstitute = homeTeamLineup.substitutes.find(lineup => lineup.player.id === playerId);
 
     if (homeStarter || homeSubstitute) {
-      return homeTeamLineup.team.name;
+      return {
+        name: homeTeamLineup.team.name,
+        logo_url: homeTeamLineup.team.logo_url
+      };
     }
 
     // Check away team starters and substitutes
@@ -150,7 +154,10 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
     const awaySubstitute = awayTeamLineup.substitutes.find(lineup => lineup.player.id === playerId);
 
     if (awayStarter || awaySubstitute) {
-      return awayTeamLineup.team.name;
+      return {
+        name: awayTeamLineup.team.name,
+        logo_url: awayTeamLineup.team.logo_url
+      };
     }
 
     return null;
@@ -250,9 +257,18 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
                         <div className="text-sm text-gray-600 flex items-center space-x-2">
                           <span>{event.player_position}</span>
                           {getPlayerTeam(event.player_id) && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              {getPlayerTeam(event.player_id)}
-                            </span>
+                            <div className="flex items-center space-x-1 bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              {getPlayerTeam(event.player_id)?.logo_url && (
+                                <img
+                                  src={`http://localhost:8000${getPlayerTeam(event.player_id)?.logo_url}`}
+                                  alt={`${getPlayerTeam(event.player_id)?.name} logo`}
+                                  className="w-4 h-4 object-contain rounded-full bg-white"
+                                />
+                              )}
+                              <span className="text-xs">
+                                {getPlayerTeam(event.player_id)?.name}
+                              </span>
+                            </div>
                           )}
                           {formatBirthDate(event.player_birth_date) && (
                             <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">

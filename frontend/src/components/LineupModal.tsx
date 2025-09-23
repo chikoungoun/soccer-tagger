@@ -895,7 +895,25 @@ const LineupModal: React.FC<LineupModalProps> = ({ fixture, onSave, onClose }) =
               <CardTitle className="text-lg md:text-xl flex items-center">
                 <PlayIcon className="w-5 h-5 md:w-6 md:h-6 mr-2" />
                 <span className="hidden md:inline">Lineup Manager: </span>
-                {fixture.home_team.name} vs {fixture.away_team.name}
+                <div className="flex items-center space-x-2">
+                  {fixture.home_team.logo_url && (
+                    <img
+                      src={`http://localhost:8000${fixture.home_team.logo_url}`}
+                      alt={`${fixture.home_team.name} logo`}
+                      className="w-6 h-6 md:w-8 md:h-8 object-contain rounded-full border border-white/30 bg-white"
+                    />
+                  )}
+                  <span>{fixture.home_team.name}</span>
+                  <span className="text-emerald-200">vs</span>
+                  <span>{fixture.away_team.name}</span>
+                  {fixture.away_team.logo_url && (
+                    <img
+                      src={`http://localhost:8000${fixture.away_team.logo_url}`}
+                      alt={`${fixture.away_team.name} logo`}
+                      className="w-6 h-6 md:w-8 md:h-8 object-contain rounded-full border border-white/30 bg-white"
+                    />
+                  )}
+                </div>
               </CardTitle>
               <p className="text-emerald-100 text-sm mt-1 hidden md:block">
                 Manage your team formation and substitutes
@@ -924,8 +942,8 @@ const LineupModal: React.FC<LineupModalProps> = ({ fixture, onSave, onClose }) =
             </TabsList>
 
             <TabsContent value="home" className="p-2 md:p-4 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-                <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div className="flex items-center space-x-2 md:space-x-4 justify-center md:justify-start">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Formation:</label>
                     <Select value={homeFormation} onValueChange={setHomeFormation}>
@@ -952,8 +970,24 @@ const LineupModal: React.FC<LineupModalProps> = ({ fixture, onSave, onClose }) =
                     <span className="md:hidden">Reset</span>
                   </Button>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Starters: {getStarters(fixture.home_team_id).length}/11
+                <div className="flex items-center justify-center">
+                  {fixture.home_team.logo_url && (
+                    <div className="flex items-center space-x-2">
+                      <img
+                        src={`http://localhost:8000${fixture.home_team.logo_url}`}
+                        alt={`${fixture.home_team.name} logo`}
+                        className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full border border-gray-200 bg-white"
+                      />
+                      <span className="text-lg font-semibold text-gray-800 hidden md:block">
+                        {fixture.home_team.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center md:justify-end">
+                  <div className="text-sm text-gray-600">
+                    Starters: {getStarters(fixture.home_team_id).length}/11
+                  </div>
                 </div>
               </div>
 
@@ -968,8 +1002,8 @@ const LineupModal: React.FC<LineupModalProps> = ({ fixture, onSave, onClose }) =
             </TabsContent>
 
             <TabsContent value="away" className="p-2 md:p-4 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-                <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div className="flex items-center space-x-2 md:space-x-4 justify-center md:justify-start">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Formation:</label>
                     <Select value={awayFormation} onValueChange={setAwayFormation}>
@@ -996,8 +1030,24 @@ const LineupModal: React.FC<LineupModalProps> = ({ fixture, onSave, onClose }) =
                     <span className="md:hidden">Reset</span>
                   </Button>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Starters: {getStarters(fixture.away_team_id).length}/11
+                <div className="flex items-center justify-center">
+                  {fixture.away_team.logo_url && (
+                    <div className="flex items-center space-x-2">
+                      <img
+                        src={`http://localhost:8000${fixture.away_team.logo_url}`}
+                        alt={`${fixture.away_team.name} logo`}
+                        className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full border border-gray-200 bg-white"
+                      />
+                      <span className="text-lg font-semibold text-gray-800 hidden md:block">
+                        {fixture.away_team.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center md:justify-end">
+                  <div className="text-sm text-gray-600">
+                    Starters: {getStarters(fixture.away_team_id).length}/11
+                  </div>
                 </div>
               </div>
 

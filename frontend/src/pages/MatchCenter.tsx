@@ -230,7 +230,16 @@ const MatchCenter: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
               {/* Home Team */}
               <div className="lg:col-span-2 text-center lg:text-right">
-                <h2 className="text-4xl font-bold mb-3">{fixture.home_team.name}</h2>
+                <div className="flex items-center justify-center lg:justify-end space-x-4 mb-3">
+                  {fixture.home_team.logo_url && (
+                    <img
+                      src={`http://localhost:8000${fixture.home_team.logo_url}`}
+                      alt={`${fixture.home_team.name} logo`}
+                      className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full border-2 border-white/30 bg-white shadow-lg"
+                    />
+                  )}
+                  <h2 className="text-4xl font-bold">{fixture.home_team.name}</h2>
+                </div>
                 <Badge
                   variant="secondary"
                   className="bg-white/20 text-white border-white/30 text-base px-3 py-1"
@@ -253,7 +262,16 @@ const MatchCenter: React.FC = () => {
 
               {/* Away Team */}
               <div className="lg:col-span-2 text-center lg:text-left">
-                <h2 className="text-4xl font-bold mb-3">{fixture.away_team.name}</h2>
+                <div className="flex items-center justify-center lg:justify-start space-x-4 mb-3">
+                  <h2 className="text-4xl font-bold">{fixture.away_team.name}</h2>
+                  {fixture.away_team.logo_url && (
+                    <img
+                      src={`http://localhost:8000${fixture.away_team.logo_url}`}
+                      alt={`${fixture.away_team.name} logo`}
+                      className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full border-2 border-white/30 bg-white shadow-lg"
+                    />
+                  )}
+                </div>
                 <Badge
                   variant="secondary"
                   className="bg-white/20 text-white border-white/30 text-base px-3 py-1"

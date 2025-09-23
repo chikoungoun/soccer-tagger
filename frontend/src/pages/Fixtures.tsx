@@ -529,9 +529,22 @@ const Fixtures: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
                     {/* Home Team */}
                     <div className="lg:col-span-2 text-center lg:text-right">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
-                        {fixture.home_team.name}
-                      </h3>
+                      <div className="flex items-center justify-center lg:justify-end space-x-3 mb-1">
+                        {fixture.home_team.logo_url && (
+                          <img
+                            src={`http://localhost:8000${fixture.home_team.logo_url}`}
+                            alt={`${fixture.home_team.name} logo`}
+                            className="w-16 h-16 object-contain rounded-full border border-gray-200 bg-white"
+                            onError={(e) => {
+                              console.log('Failed to load home team logo:', fixture.home_team.name, fixture.home_team.logo_url);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {fixture.home_team.name}
+                        </h3>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         🏠 Home
                       </Badge>
@@ -559,9 +572,22 @@ const Fixtures: React.FC = () => {
 
                     {/* Away Team */}
                     <div className="lg:col-span-2 text-center lg:text-left">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
-                        {fixture.away_team.name}
-                      </h3>
+                      <div className="flex items-center justify-center lg:justify-start space-x-3 mb-1">
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {fixture.away_team.name}
+                        </h3>
+                        {fixture.away_team.logo_url && (
+                          <img
+                            src={`http://localhost:8000${fixture.away_team.logo_url}`}
+                            alt={`${fixture.away_team.name} logo`}
+                            className="w-16 h-16 object-contain rounded-full border border-gray-200 bg-white"
+                            onError={(e) => {
+                              console.log('Failed to load away team logo:', fixture.away_team.name, fixture.away_team.logo_url);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         ✈️ Away
                       </Badge>
