@@ -158,5 +158,17 @@
     "venue": "Venue",
     "referee": "Referee",
     "attendance": "Attendance"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications yet",
+    "fixtureCreated": "New Fixture Created",
+    "gameweekCreated": "New Gameweek Created",
+    "timeAgo": {
+      "minutes": "m ago",
+      "hours": "h ago",
+      "days": "d ago"
+    }
   }
 }

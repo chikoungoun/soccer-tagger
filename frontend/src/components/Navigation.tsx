@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
+import NotificationBell from './NotificationBell';
 
 const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -145,6 +146,9 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
               {/* Theme Toggle */}
               <ThemeToggle />
+
+              {/* Notifications */}
+              <NotificationBell />
 
               {/* Enhanced Mobile menu button */}
               <button

@@ -158,5 +158,17 @@
     "venue": "Lieu",
     "referee": "Arbitre",
     "attendance": "Assistance"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "noNotifications": "Aucune notification pour le moment",
+    "fixtureCreated": "Nouvelle Rencontre Créée",
+    "gameweekCreated": "Nouvelle Journée Créée",
+    "timeAgo": {
+      "minutes": "min",
+      "hours": "h",
+      "days": "j"
+    }
   }
 }
