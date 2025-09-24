@@ -4,6 +4,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import os
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from database import get_db
 from models import User
 from auth import (
@@ -17,6 +21,9 @@ from auth import (
 )
 from utils.session_manager import SessionManager
 from utils.notification_manager import NotificationManager
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -95,6 +102,7 @@ async def register_user(
     return new_user
 
 @router.post("/login", response_model=UserResponse)
+@limiter.limit("5/minute")  # Allow 5 login attempts per minute per IP
 async def login_for_access_token(
     request: Request,
     response: Response,
@@ -146,13 +154,16 @@ async def login_for_access_token(
     )
 
     # Set httpOnly cookie
+    # Determine if we're in production or development
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
     response.set_cookie(
         key="access_token",
         value=access_token,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax"
+        secure=is_production,  # True in production, False in development for HTTP testing
+        samesite="strict"  # Changed from "lax" to "strict" for better security
     )
 
     return user

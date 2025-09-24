@@ -3,7 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth
+from middleware.security import SecurityHeadersMiddleware
 import os
+from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+# Load environment variables
+load_dotenv()
+
+# Initialize global rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 # Set timezone to Morocco/Casablanca
 os.environ['TZ'] = 'Africa/Casablanca'
@@ -16,12 +27,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Add rate limit state and error handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add security headers middleware (should be early in the chain)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Get CORS origins from environment or use secure defaults
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    allow_origins=cors_origins,  # Restrict to specific origins
     allow_credentials=True,  # This is important for httpOnly cookies
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],  # Specific methods only
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],  # Specific headers only
 )
 
 # Create uploads directory if it doesn't exist
