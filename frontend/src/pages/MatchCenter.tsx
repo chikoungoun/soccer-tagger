@@ -23,10 +23,12 @@ import PlayerMinutes from '../components/PlayerMinutes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '../contexts/AuthContext';
 
 const MatchCenter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [fixture, setFixture] = useState<FixtureWithTeams | null>(null);
   const [fixtureWithLineups, setFixtureWithLineups] = useState<FixtureWithLineups | null>(null);
   const [currentMinute, setCurrentMinute] = useState(0);
@@ -167,6 +169,9 @@ const MatchCenter: React.FC = () => {
     );
   }
 
+  // Remove the page-level block for taggers - let them see the match center with COMPLETED band
+  // Restriction will happen at EventTagger component level instead
+
   const { date, time } = formatDate(fixture.match_date);
 
   const getStatusIcon = () => {
@@ -196,7 +201,17 @@ const MatchCenter: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
+      {/* Diagonal COMPLETED band for all users when match is completed */}
+      {fixture.status === 'completed' && (
+        <div className="fixed inset-0 pointer-events-none z-50">
+          <div className="absolute top-0 right-0 w-64 h-64 overflow-hidden">
+            <div className="absolute top-8 -right-8 bg-green-600 text-white font-bold text-lg px-16 py-3 rotate-45 shadow-2xl border-2 border-green-700">
+              COMPLETED
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center space-x-4 mb-6">
         <Button
@@ -278,7 +293,7 @@ const MatchCenter: React.FC = () => {
                   {fixture.status === 'completed' && (
                     <span className="bg-white/20 px-3 py-1 rounded-full">Full Time</span>
                   )}
-                  {fixture.status === 'live' && currentHalf > 0 && (
+                  {currentHalf > 0 && (
                     <div className="space-y-1">
                       <div>{currentMinute > 0 ? `${currentMinute}'` : ''}</div>
                       <div className="text-sm bg-white/20 px-2 py-1 rounded-full inline-block">
@@ -286,7 +301,7 @@ const MatchCenter: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  {fixture.status === 'scheduled' && (
+                  {fixture.status === 'scheduled' && currentHalf === 0 && (
                     <span className="text-white/70">Not Started</span>
                   )}
                 </div>
@@ -346,6 +361,7 @@ const MatchCenter: React.FC = () => {
               awayTeamLineup={currentAwayLineup || fixtureWithLineups?.away_lineup || null}
               currentMinute={currentMinute}
               currentHalf={currentHalf}
+              fixtureStatus={fixture.status}
               onEventCreated={handleEventCreated}
               onLineupUpdated={handleLineupUpdated}
             />

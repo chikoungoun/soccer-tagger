@@ -6,7 +6,8 @@ import {
   ArrowRightOnRectangleIcon,
   ArrowLeftOnRectangleIcon,
   HandRaisedIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  TrophyIcon
 } from '@heroicons/react/24/outline';
 import { Player, TeamLineup } from '../types';
 import { eventsApi } from '../utils/api';
@@ -18,6 +19,7 @@ interface EventTaggerProps {
   awayTeamLineup: TeamLineup | null;
   currentMinute: number;
   currentHalf: number;
+  fixtureStatus: string;
   onEventCreated?: () => void;
   onLineupUpdated?: (homeLineup: TeamLineup, awayLineup: TeamLineup) => void;
 }
@@ -81,6 +83,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
   awayTeamLineup,
   currentMinute,
   currentHalf,
+  fixtureStatus,
   onEventCreated,
   onLineupUpdated
 }) => {
@@ -89,7 +92,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedPlayerOut, setSelectedPlayerOut] = useState<Player | null>(null);
   const [selectedPlayerIn, setSelectedPlayerIn] = useState<Player | null>(null);
-  const [customMinute, setCustomMinute] = useState<number>(currentMinute);
+  const [customMinute, setCustomMinute] = useState<number | string>(currentMinute);
   const [extraInfo, setExtraInfo] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -299,7 +302,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
         await eventsApi.createEvent(fixtureId, {
           player_id: selectedPlayerOut!.id,
           event_type: 'substitution_out',
-          minute: customMinute || currentMinute,
+          minute: typeof customMinute === 'number' ? customMinute : currentMinute,
           half: currentHalf,
           extra_info: `Substituted by ${selectedPlayerIn!.name}`
         });
@@ -307,7 +310,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
         await eventsApi.createEvent(fixtureId, {
           player_id: selectedPlayerIn!.id,
           event_type: 'substitution_in',
-          minute: customMinute || currentMinute,
+          minute: typeof customMinute === 'number' ? customMinute : currentMinute,
           half: currentHalf,
           extra_info: `Substitutes ${selectedPlayerOut!.name}`
         });
@@ -320,7 +323,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
         await eventsApi.createEvent(fixtureId, {
           player_id: selectedPlayer!.id,
           event_type: selectedEventType,
-          minute: customMinute || currentMinute,
+          minute: typeof customMinute === 'number' ? customMinute : currentMinute,
           half: currentHalf,
           extra_info: extraInfo || null
         });
@@ -357,6 +360,19 @@ const EventTagger: React.FC<EventTaggerProps> = ({
     setExtraInfo('');
     setCustomMinute(currentMinute);
   };
+
+  // Block tagger access if match is completed
+  if (fixtureStatus === 'completed' && user?.role === 'tagger') {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="text-center text-gray-500 py-8">
+          <TrophyIcon className="h-12 w-12 mx-auto mb-3 text-green-500" />
+          <p className="font-semibold text-gray-700">Match Completed</p>
+          <p className="text-sm mt-1">This match has ended and is no longer available for tagging</p>
+        </div>
+      </div>
+    );
+  }
 
   if (currentHalf === 0) {
     return (
@@ -740,7 +756,10 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                 min="1"
                 max="120"
                 value={customMinute}
-                onChange={(e) => setCustomMinute(parseInt(e.target.value) || currentMinute)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCustomMinute(value === '' ? '' : parseInt(value) || currentMinute);
+                }}
                 className="field-input"
               />
             </div>

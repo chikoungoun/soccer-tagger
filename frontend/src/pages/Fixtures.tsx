@@ -545,8 +545,21 @@ const Fixtures: React.FC = () => {
             return (
               <Card
                 key={fixture.id}
-                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg overflow-hidden"
+                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg overflow-hidden relative"
               >
+                {/* Padlock overlay for completed matches - only visible to taggers */}
+                {fixture.status === 'completed' && user?.role === 'tagger' && (
+                  <div className="absolute inset-0 z-20 bg-gray-900/40 cursor-not-allowed">
+                    {/* Padlock icon */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                      <div className="bg-gray-800 text-white p-3 rounded-full shadow-xl border-2 border-gray-600">
+                        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {/* Status Header with Team Colors */}
                 <div
                   className="p-4 text-white relative overflow-hidden"
@@ -670,12 +683,23 @@ const Fixtures: React.FC = () => {
                   {/* Actions */}
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="flex flex-wrap gap-2 justify-center">
-                      <Link to={`/match/${fixture.id}`}>
-                        <Button size="sm" className="shadow-md">
+                      {fixture.status === 'completed' && user?.role === 'tagger' ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          className="shadow-md opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                        >
                           <EyeIcon className="h-3 w-3 mr-1" />
                           Match Center
                         </Button>
-                      </Link>
+                      ) : (
+                        <Link to={`/match/${fixture.id}`}>
+                          <Button size="sm" className="shadow-md">
+                            <EyeIcon className="h-3 w-3 mr-1" />
+                            Match Center
+                          </Button>
+                        </Link>
+                      )}
 
                       {(fixture.status === 'scheduled' || fixture.status === 'live') && (
                         <Button
@@ -701,14 +725,25 @@ const Fixtures: React.FC = () => {
                         </Button>
                       )}
 
-                      <Button
-                        onClick={() => openLineupModal(fixture)}
-                        variant="outline"
-                        size="sm"
-                        className="shadow-md"
-                      >
-                        👥 Lineups
-                      </Button>
+                      {fixture.status === 'completed' && user?.role === 'tagger' ? (
+                        <Button
+                          disabled
+                          variant="outline"
+                          size="sm"
+                          className="shadow-md opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                        >
+                          👥 Lineups
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => openLineupModal(fixture)}
+                          variant="outline"
+                          size="sm"
+                          className="shadow-md"
+                        >
+                          👥 Lineups
+                        </Button>
+                      )}
 
                       {canEditFixtures && (
                         <>
