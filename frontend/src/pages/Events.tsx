@@ -84,11 +84,9 @@ const Events: React.FC = () => {
         }
       }
 
-      // Sort by fixture date descending (most recent first), then by minute descending
+      // Sort by event created_at timestamp (most recent recordings first)
       allEvents.sort((a, b) => {
-        const dateComparison = new Date(b.fixture.datetime).getTime() - new Date(a.fixture.datetime).getTime();
-        if (dateComparison !== 0) return dateComparison;
-        return b.minute - a.minute;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       setEvents(allEvents);
@@ -263,7 +261,7 @@ const Events: React.FC = () => {
             <span>Event History</span>
           </CardTitle>
           <CardDescription>
-            All events from completed matches, sorted by most recent fixture first
+            All events from completed matches, sorted by most recently recorded events first
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -367,7 +365,7 @@ const Events: React.FC = () => {
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                           <div className="flex items-center space-x-2">
                             <ClockIcon className="h-4 w-4" />
-                            <span>Match Date</span>
+                            <span>Event Time</span>
                           </div>
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -379,7 +377,7 @@ const Events: React.FC = () => {
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                           <div className="flex items-center space-x-2">
                             <ClockIcon className="h-4 w-4" />
-                            <span>Event Time</span>
+                            <span>Match Date</span>
                           </div>
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -439,7 +437,7 @@ const Events: React.FC = () => {
                           </td>
                           <td className="px-3 py-2">
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              {formatDateTime(event.fixture)}
+                              {formatDateTime(event)}
                             </div>
                           </td>
                           <td className="px-3 py-2">
@@ -449,7 +447,7 @@ const Events: React.FC = () => {
                           </td>
                           <td className="px-3 py-2">
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              {formatDateTime(event)}
+                              {formatDateTime(event.fixture)}
                             </div>
                           </td>
                           <td className="px-3 py-2">

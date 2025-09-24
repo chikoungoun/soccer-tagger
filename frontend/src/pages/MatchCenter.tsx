@@ -38,6 +38,7 @@ const MatchCenter: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [autoRedirectCountdown, setAutoRedirectCountdown] = useState<number | null>(null);
 
   // Track dynamically updated lineups after substitutions
   const [currentHomeLineup, setCurrentHomeLineup] = useState<TeamLineup | null>(null);
@@ -48,6 +49,95 @@ const MatchCenter: React.FC = () => {
       fetchData();
     }
   }, [id]);
+
+  // Auto-redirect when match becomes completed for non-admin users
+  useEffect(() => {
+    if (fixture && fixture.status === 'completed' && user?.role === 'tagger') {
+      // Check if tagger was assigned to this match
+      if (fixture.assigned_tagger_id && fixture.assigned_tagger_id === user.id) {
+        // Start countdown
+        setAutoRedirectCountdown(3);
+
+        const countdownInterval = setInterval(() => {
+          setAutoRedirectCountdown(prev => {
+            if (prev && prev > 1) {
+              return prev - 1;
+            }
+            return null;
+          });
+        }, 1000);
+
+        // Redirect after countdown
+        const timer = setTimeout(() => {
+          navigate('/fixtures', {
+            replace: true,
+            state: { message: 'Match completed and closed automatically' }
+          });
+        }, 3000);
+
+        return () => {
+          clearTimeout(timer);
+          clearInterval(countdownInterval);
+          setAutoRedirectCountdown(null);
+        };
+      }
+    }
+  }, [fixture, user, navigate]);
+
+  // Permission checking on page focus/visibility
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (!fixture || !user || user.role === 'super_admin') return;
+
+      try {
+        // Re-fetch fixture to get latest assignment status
+        const freshFixture = await fixturesApi.getById(fixture.id);
+
+        // If tagger and match is assigned to someone else or completed, redirect
+        if (user.role === 'tagger') {
+          if (freshFixture.assigned_tagger_id !== user.id && freshFixture.assigned_tagger_id !== null) {
+            navigate('/fixtures', {
+              replace: true,
+              state: { message: 'This match is no longer assigned to you' }
+            });
+            return;
+          }
+
+          if (freshFixture.status === 'completed') {
+            navigate('/fixtures', {
+              replace: true,
+              state: { message: 'Match has been completed' }
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking permissions:', error);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkPermissions();
+      }
+    };
+
+    const handleFocus = () => {
+      checkPermissions();
+    };
+
+    // Check permissions when page becomes visible or gains focus
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Initial permission check
+    checkPermissions();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fixture, user, navigate]);
 
   const fetchData = async () => {
     if (!id) return;
@@ -203,9 +293,21 @@ const MatchCenter: React.FC = () => {
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
+      {/* Auto-redirect countdown notification */}
+      {autoRedirectCountdown !== null && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl border-2 border-blue-700 animate-pulse">
+          <div className="flex items-center space-x-3">
+            <ClockIcon className="h-5 w-5" />
+            <span className="font-semibold">
+              Match completed! Redirecting in {autoRedirectCountdown}s...
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Diagonal COMPLETED band for all users when match is completed */}
       {fixture.status === 'completed' && (
-        <div className="fixed inset-0 pointer-events-none z-50">
+        <div className="fixed inset-0 pointer-events-none z-40">
           <div className="absolute top-0 right-0 w-64 h-64 overflow-hidden">
             <div className="absolute top-8 -right-8 bg-green-600 text-white font-bold text-lg px-16 py-3 rotate-45 shadow-2xl border-2 border-green-700">
               COMPLETED

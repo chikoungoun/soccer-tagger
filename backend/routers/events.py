@@ -445,15 +445,13 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
 
 @router.get("/fixtures/{fixture_id}/events", response_model=List[EventResponse])
 async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
-    """Get all events for a fixture, ordered by minute"""
+    """Get all events for a fixture, ordered by when they were recorded (created_at timestamp)"""
     events = db.query(MatchEvent).options(
         joinedload(MatchEvent.player),
         joinedload(MatchEvent.creator)
     ).filter(
         MatchEvent.fixture_id == fixture_id
     ).order_by(
-        desc(MatchEvent.half),
-        desc(MatchEvent.minute),
         desc(MatchEvent.created_at)
     ).all()
 

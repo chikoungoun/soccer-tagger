@@ -8,7 +8,8 @@ import {
   HandRaisedIcon,
   ShieldCheckIcon,
   TrashIcon,
-  PencilIcon
+  PencilIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 import { eventsApi } from '../utils/api';
 
@@ -23,6 +24,8 @@ interface MatchEvent {
   minute: number;
   half: number;
   extra_info: string | null;
+  created_by: number | null;
+  tagger_name: string;
   created_at: string;
 }
 
@@ -62,6 +65,7 @@ interface EventsListProps {
 
 const eventIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   goal: FireIcon,
+  assist: UserPlusIcon,
   yellow_card: ExclamationTriangleIcon,
   red_card: XCircleIcon,
   substitution_in: ArrowRightOnRectangleIcon,
@@ -72,6 +76,7 @@ const eventIcons: Record<string, React.ComponentType<{ className?: string }>> = 
 
 const eventColors: Record<string, { text: string; bg: string }> = {
   goal: { text: 'text-green-600', bg: 'bg-green-50' },
+  assist: { text: 'text-purple-600', bg: 'bg-purple-50' },
   yellow_card: { text: 'text-yellow-600', bg: 'bg-yellow-50' },
   red_card: { text: 'text-red-600', bg: 'bg-red-50' },
   substitution_in: { text: 'text-blue-600', bg: 'bg-blue-50' },
@@ -82,6 +87,7 @@ const eventColors: Record<string, { text: string; bg: string }> = {
 
 const eventLabels: Record<string, string> = {
   goal: 'Goal',
+  assist: 'Assist',
   yellow_card: 'Yellow Card',
   red_card: 'Red Card',
   substitution_in: 'Substitution In',
@@ -101,7 +107,15 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
   const fetchEvents = async () => {
     try {
       const eventsData = await eventsApi.getEvents(fixtureId);
-      setEvents(eventsData);
+
+      // Sort by created_at timestamp (most recent first)
+      const sortedEvents = [...eventsData].sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
+        return timeB - timeA; // Most recent recordings first
+      });
+
+      setEvents(sortedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -200,6 +214,8 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
     );
   }
 
+  // Use events directly since they're already sorted by the backend
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -284,8 +300,12 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
                         </div>
                       )}
 
-                      <div className="mt-2 text-xs text-gray-500">
-                        {new Date(event.created_at).toLocaleString()}
+                      <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500">
+                        <span>{new Date(event.created_at).toLocaleString()}</span>
+                        <span>•</span>
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          Tagged by: {event.tagger_name}
+                        </span>
                       </div>
                     </div>
                   </div>
