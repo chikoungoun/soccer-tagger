@@ -11,7 +11,8 @@ import {
   TrophyIcon,
   ChevronRightIcon,
   SparklesIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { teamsApi } from '../utils/api';
 import { Team, CreateTeamData } from '../types';
@@ -30,6 +31,7 @@ const Teams: React.FC = () => {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [showImportHelp, setShowImportHelp] = useState(false);
 
   useEffect(() => {
     fetchTeams();
@@ -153,33 +155,67 @@ const Teams: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileImport}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={importing}
-                />
+            <div className="mt-6 sm:mt-0 flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileImport}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={importing}
+                  />
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 text-white border-white/30 hover:bg-white/20 shadow-lg flex items-center"
+                    disabled={importing}
+                  >
+                    <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
+                    {importing ? t('teams.importing') : t('teams.import')}
+                  </Button>
+                </div>
                 <Button
+                  onClick={() => setShowModal(true)}
                   size="lg"
-                  variant="outline"
-                  className="bg-white/10 text-white border-white/30 hover:bg-white/20 shadow-lg flex items-center"
-                  disabled={importing}
+                  className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg flex items-center"
                 >
-                  <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                  {importing ? t('teams.importing') : t('teams.import')}
+                  <PlusIcon className="h-5 w-5 mr-2" />
+{t('teams.addNew')}
                 </Button>
               </div>
-              <Button
-                onClick={() => setShowModal(true)}
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg flex items-center"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-{t('teams.addNew')}
-              </Button>
+
+              {/* Import Format Help */}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowImportHelp(!showImportHelp)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1 h-auto"
+                >
+                  <InformationCircleIcon className="h-4 w-4 mr-1" />
+                  CSV Format Info
+                </Button>
+              </div>
+
+              {showImportHelp && (
+                <div className="bg-white/10 rounded-lg p-4 text-white/90 text-sm border border-white/20">
+                  <h4 className="font-semibold mb-2">CSV Import Format:</h4>
+                  <div className="bg-white/20 rounded p-2 font-mono text-xs mb-2">
+                    name,team_code_name,founded_year,stadium,description
+                  </div>
+                  <ul className="space-y-1 text-xs">
+                    <li>• <strong>name:</strong> Team's full name (required)</li>
+                    <li>• <strong>team_code_name:</strong> Short team code (required, e.g., "ARS")</li>
+                    <li>• <strong>founded_year:</strong> Year team was founded (optional)</li>
+                    <li>• <strong>stadium:</strong> Home stadium name (optional)</li>
+                    <li>• <strong>description:</strong> Team description (optional)</li>
+                  </ul>
+                  <p className="text-xs mt-2 text-white/70">
+                    Example: "Arsenal FC,ARS,1886,Emirates Stadium,One of the most successful clubs in English football"
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -373,6 +409,10 @@ const Teams: React.FC = () => {
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                        <UserGroupIcon className="h-3 w-3 mr-1" />
+                        {team.player_count || 0} Players
+                      </Badge>
                       {hasTeamColors && (
                         <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2 py-1">
                           <div

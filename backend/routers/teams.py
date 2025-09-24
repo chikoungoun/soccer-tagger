@@ -4,15 +4,41 @@ from typing import List
 import csv
 import io
 from database import get_db
-from models import Team
-from schemas import Team as TeamSchema, TeamCreate, TeamUpdate, TeamWithPlayers
+from models import Team, Player
+from schemas import Team as TeamSchema, TeamCreate, TeamUpdate, TeamWithPlayers, TeamWithPlayerCount
 
 router = APIRouter()
 
-@router.get("/", response_model=List[TeamSchema])
+@router.get("/", response_model=List[TeamWithPlayerCount])
 def get_teams(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    from sqlalchemy import func
+
+    # Get teams first
     teams = db.query(Team).offset(skip).limit(limit).all()
-    return teams
+
+    # Convert to list with player counts
+    result = []
+    for team in teams:
+        # Get player count for this team
+        player_count = db.query(func.count(Player.id)).filter(Player.team_id == team.id).scalar() or 0
+
+        team_dict = {
+            'id': team.id,
+            'name': team.name,
+            'team_code_name': getattr(team, 'team_code_name', None),
+            'logo_url': team.logo_url,
+            'primary_color': team.primary_color,
+            'secondary_color': team.secondary_color,
+            'founded_year': team.founded_year,
+            'stadium': team.stadium,
+            'description': team.description,
+            'created_at': team.created_at,
+            'updated_at': team.updated_at,
+            'player_count': player_count
+        }
+        result.append(team_dict)
+
+    return result
 
 @router.get("/{team_id}", response_model=TeamWithPlayers)
 def get_team(team_id: int, db: Session = Depends(get_db)):

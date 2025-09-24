@@ -100,6 +100,9 @@ class Fixture(FixtureBase):
 class TeamWithPlayers(Team):
     players: List[Player] = []
 
+class TeamWithPlayerCount(Team):
+    player_count: int = 0
+
 class FixtureWithTeams(Fixture):
     home_team: Team
     away_team: Team

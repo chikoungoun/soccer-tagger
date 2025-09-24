@@ -11,7 +11,8 @@ import {
   FireIcon,
   SparklesIcon,
   StarIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { playersApi, teamsApi } from '../utils/api';
 import { Player, Team, CreatePlayerData } from '../types';
@@ -31,6 +32,7 @@ const Players: React.FC = () => {
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [showImportHelp, setShowImportHelp] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     teamId: '',
@@ -231,34 +233,69 @@ const Players: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileImport}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={importing || teams.length === 0}
-                />
+            <div className="mt-6 sm:mt-0 flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileImport}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={importing || teams.length === 0}
+                  />
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 text-white border-white/30 hover:bg-white/20 shadow-lg flex items-center"
+                    disabled={importing || teams.length === 0}
+                  >
+                    <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
+                    {importing ? t('players.importing') : t('players.import')}
+                  </Button>
+                </div>
                 <Button
+                  onClick={() => setShowModal(true)}
                   size="lg"
-                  variant="outline"
-                  className="bg-white/10 text-white border-white/30 hover:bg-white/20 shadow-lg flex items-center"
-                  disabled={importing || teams.length === 0}
+                  className="bg-white text-emerald-600 hover:bg-gray-100 shadow-lg flex items-center"
+                  disabled={teams.length === 0}
                 >
-                  <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                  {importing ? t('players.importing') : t('players.import')}
+                  <PlusIcon className="h-5 w-5 mr-2" />
+{t('players.addNew')}
                 </Button>
               </div>
-              <Button
-                onClick={() => setShowModal(true)}
-                size="lg"
-                className="bg-white text-emerald-600 hover:bg-gray-100 shadow-lg flex items-center"
-                disabled={teams.length === 0}
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-{t('players.addNew')}
-              </Button>
+
+              {/* Import Format Help */}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowImportHelp(!showImportHelp)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1 h-auto"
+                >
+                  <InformationCircleIcon className="h-4 w-4 mr-1" />
+                  CSV Format Info
+                </Button>
+              </div>
+
+              {showImportHelp && (
+                <div className="bg-white/10 rounded-lg p-4 text-white/90 text-sm border border-white/20">
+                  <h4 className="font-semibold mb-2">CSV Import Format:</h4>
+                  <div className="bg-white/20 rounded p-2 font-mono text-xs mb-2">
+                    name,jersey_number,position,birth_date,nationality,team_name
+                  </div>
+                  <ul className="space-y-1 text-xs">
+                    <li>• <strong>name:</strong> Player's full name (required)</li>
+                    <li>• <strong>jersey_number:</strong> Number 1-99 (required)</li>
+                    <li>• <strong>position:</strong> GK, DF, MF, or FW (required)</li>
+                    <li>• <strong>birth_date:</strong> YYYY-MM-DD format (optional)</li>
+                    <li>• <strong>nationality:</strong> Country name (optional)</li>
+                    <li>• <strong>team_name:</strong> Must match existing team name (required)</li>
+                  </ul>
+                  <p className="text-xs mt-2 text-white/70">
+                    Example: "John Smith,10,MF,1995-03-15,England,Arsenal FC"
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

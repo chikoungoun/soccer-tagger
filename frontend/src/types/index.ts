@@ -10,6 +10,7 @@ export interface Team {
   description?: string;
   created_at: string;
   updated_at?: string;
+  player_count?: number;
 }
 
 export interface Player {
