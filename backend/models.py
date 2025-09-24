@@ -82,12 +82,14 @@ class Fixture(Base):
     status = Column(String(20), default="scheduled")  # scheduled, live, completed, cancelled
     home_score = Column(Integer, default=0)
     away_score = Column(Integer, default=0)
+    assigned_tagger_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL = available to anyone, user_id = assigned to specific tagger
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     gameweek = relationship("Gameweek", back_populates="fixtures")
     home_team = relationship("Team", foreign_keys=[home_team_id], back_populates="home_fixtures")
     away_team = relationship("Team", foreign_keys=[away_team_id], back_populates="away_fixtures")
+    assigned_tagger = relationship("User", foreign_keys=[assigned_tagger_id])
     lineups = relationship("Lineup", back_populates="fixture", cascade="all, delete-orphan")
 
 class Lineup(Base):

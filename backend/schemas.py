@@ -91,6 +91,7 @@ class Fixture(FixtureBase):
     status: str
     home_score: int
     away_score: int
+    assigned_tagger_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -103,9 +104,32 @@ class TeamWithPlayers(Team):
 class TeamWithPlayerCount(Team):
     player_count: int = 0
 
+# User schemas (defined early for forward references)
+class UserBase(BaseModel):
+    username: str
+    email: str
+    role: str = "tagger"
+    is_active: bool = True
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 class FixtureWithTeams(Fixture):
     home_team: Team
     away_team: Team
+    assigned_tagger: Optional[User] = None
 
 class GameweekBase(BaseModel):
     week_number: int
@@ -167,6 +191,28 @@ class TeamLineup(BaseModel):
     team: Team
     starters: List[LineupWithPlayer] = []
     substitutes: List[LineupWithPlayer] = []
+
+# User schemas
+class UserBase(BaseModel):
+    username: str
+    email: str
+    role: str = "tagger"
+    is_active: bool = True
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
 
 class FixtureWithLineups(FixtureWithTeams):
     home_lineup: Optional[TeamLineup] = None

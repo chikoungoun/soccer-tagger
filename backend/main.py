@@ -5,6 +5,9 @@ from database import engine, Base
 from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth
 import os
 
+# Set timezone to Morocco/Casablanca
+os.environ['TZ'] = 'Africa/Casablanca'
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(

@@ -38,6 +38,7 @@ export interface Fixture {
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
   home_score: number;
   away_score: number;
+  assigned_tagger_id?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -45,6 +46,7 @@ export interface Fixture {
 export interface FixtureWithTeams extends Fixture {
   home_team: Team;
   away_team: Team;
+  assigned_tagger?: User;
 }
 
 export interface TeamWithPlayers extends Team {

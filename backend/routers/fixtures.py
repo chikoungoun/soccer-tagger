@@ -4,17 +4,26 @@ from typing import List
 from database import get_db
 from models import Fixture, Team, User
 from schemas import Fixture as FixtureSchema, FixtureCreate, FixtureUpdate, FixtureWithTeams
-from auth import get_current_active_user
+from auth import get_current_active_user, require_tagger_or_admin, require_super_admin
 from utils.notification_manager import NotificationManager
 
 router = APIRouter()
 
 @router.get("/", response_model=List[FixtureWithTeams])
-def get_fixtures(skip: int = 0, limit: int = 100, team_id: int = None, status: str = None, db: Session = Depends(get_db)):
+def get_fixtures(skip: int = 0, limit: int = 100, team_id: int = None, status: str = None, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     query = db.query(Fixture).options(
         joinedload(Fixture.home_team),
-        joinedload(Fixture.away_team)
+        joinedload(Fixture.away_team),
+        joinedload(Fixture.assigned_tagger)
     )
+
+    # Filter fixtures based on user role and assignment
+    if current_user.role == "tagger":
+        # Taggers see only fixtures assigned to them OR unassigned fixtures
+        query = query.filter(
+            (Fixture.assigned_tagger_id == current_user.id) | (Fixture.assigned_tagger_id.is_(None))
+        )
+    # Super admins see all fixtures (no additional filter)
 
     if team_id:
         query = query.filter(
@@ -28,14 +37,21 @@ def get_fixtures(skip: int = 0, limit: int = 100, team_id: int = None, status: s
     return fixtures
 
 @router.get("/{fixture_id}", response_model=FixtureWithTeams)
-def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
+def get_fixture(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
     fixture = db.query(Fixture).options(
         joinedload(Fixture.home_team),
-        joinedload(Fixture.away_team)
+        joinedload(Fixture.away_team),
+        joinedload(Fixture.assigned_tagger)
     ).filter(Fixture.id == fixture_id).first()
 
     if fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
+
+    # Check if tagger has access to this fixture
+    if current_user.role == "tagger":
+        if fixture.assigned_tagger_id is not None and fixture.assigned_tagger_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied: fixture not assigned to you")
+
     return fixture
 
 @router.post("/", response_model=FixtureSchema)
@@ -126,3 +142,31 @@ def delete_fixture(fixture_id: int, db: Session = Depends(get_db)):
     db.delete(db_fixture)
     db.commit()
     return {"message": "Fixture deleted successfully"}
+
+@router.patch("/{fixture_id}/assign")
+def assign_fixture(
+    fixture_id: int,
+    tagger_id: int = None,  # None to unassign
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Assign or unassign a fixture to a specific tagger (super_admin only)"""
+    fixture = db.query(Fixture).filter(Fixture.id == fixture_id).first()
+    if not fixture:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+
+    if tagger_id is not None:
+        # Validate tagger exists and has tagger role
+        tagger = db.query(User).filter(User.id == tagger_id, User.role == "tagger", User.is_active == True).first()
+        if not tagger:
+            raise HTTPException(status_code=400, detail="Invalid tagger ID or tagger not active")
+
+        fixture.assigned_tagger_id = tagger_id
+        message = f"Fixture assigned to {tagger.username}"
+    else:
+        fixture.assigned_tagger_id = None
+        message = "Fixture unassigned (available to all taggers)"
+
+    db.commit()
+    db.refresh(fixture)
+    return {"message": message, "fixture": fixture}

@@ -69,6 +69,10 @@ export const fixturesApi = {
   updateScore: (id: number, homeScore: number, awayScore: number): Promise<any> =>
     api.patch(`/fixtures/${id}/score?home_score=${homeScore}&away_score=${awayScore}`).then(res => res.data),
   complete: (id: number): Promise<any> => api.patch(`/fixtures/${id}/complete`).then(res => res.data),
+  assignTagger: (id: number, taggerId?: number): Promise<any> => {
+    const params = taggerId ? `?tagger_id=${taggerId}` : '';
+    return api.patch(`/fixtures/${id}/assign${params}`).then(res => res.data);
+  },
   delete: (id: number): Promise<void> => api.delete(`/fixtures/${id}`).then(res => res.data),
 };
 

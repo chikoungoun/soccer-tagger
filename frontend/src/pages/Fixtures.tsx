@@ -21,8 +21,8 @@ import {
   FunnelIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
-import { fixturesApi, teamsApi, gameweeksApi, lineupsApi } from '../utils/api';
-import { FixtureWithTeams, FixtureWithLineups, Team, CreateFixtureData, Gameweek } from '../types';
+import { fixturesApi, teamsApi, gameweeksApi, lineupsApi, usersApi } from '../utils/api';
+import { FixtureWithTeams, FixtureWithLineups, Team, CreateFixtureData, Gameweek, User } from '../types';
 import FixtureModal from '../components/FixtureModal';
 import ScoreModal from '../components/ScoreModal';
 import LineupModal from '../components/LineupModal';
@@ -52,6 +52,7 @@ const Fixtures: React.FC = () => {
   const [fixtures, setFixtures] = useState<FixtureWithTeams[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [gameweeks, setGameweeks] = useState<Gameweek[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFixtureModal, setShowFixtureModal] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
@@ -122,11 +123,19 @@ const Fixtures: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [fixturesData, teamsData, gameweeksData] = await Promise.all([
+      const promises = [
         fixturesApi.getAll(),
         teamsApi.getAll(),
         gameweeksApi.getAll()
-      ]);
+      ];
+
+      // Only fetch users if user is super_admin
+      if (canEditFixtures) {
+        promises.push(usersApi.getAll());
+      }
+
+      const results = await Promise.all(promises);
+      const [fixturesData, teamsData, gameweeksData, usersData] = results;
 
       // Filter fixtures based on user role
       let filteredFixtures = fixturesData;
@@ -144,6 +153,11 @@ const Fixtures: React.FC = () => {
       setFixtures(filteredFixtures);
       setTeams(teamsData);
       setGameweeks(gameweeksData);
+
+      // Set users if fetched (only for super_admin)
+      if (usersData) {
+        setUsers(usersData);
+      }
 
       // For taggers, automatically set the active gameweek filter
       if (user?.role === 'tagger') {
@@ -221,6 +235,15 @@ const Fixtures: React.FC = () => {
       fetchData();
     } catch (error) {
       console.error('Error completing fixture:', error);
+    }
+  };
+
+  const handleAssignTagger = async (fixtureId: number, taggerId?: number) => {
+    try {
+      await fixturesApi.assignTagger(fixtureId, taggerId);
+      fetchData(); // Refresh to show updated assignment
+    } catch (error) {
+      console.error('Error assigning tagger:', error);
     }
   };
 
@@ -577,6 +600,27 @@ const Fixtures: React.FC = () => {
                       >
                         {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
                       </Badge>
+
+                      {/* Assignment indicator for taggers */}
+                      {user?.role === 'tagger' && (
+                        <Badge
+                          variant="secondary"
+                          className={`${
+                            fixture.assigned_tagger_id === user.id
+                              ? 'bg-blue-500/90 text-white border-blue-300'
+                              : fixture.assigned_tagger_id
+                                ? 'bg-gray-500/90 text-white border-gray-300'
+                                : 'bg-green-500/90 text-white border-green-300'
+                          }`}
+                        >
+                          {fixture.assigned_tagger_id === user.id
+                            ? '👤 Assigned to You'
+                            : fixture.assigned_tagger_id
+                              ? '🔒 Assigned to ' + (fixture.assigned_tagger?.username || 'Other')
+                              : '🌍 Available to All'
+                          }
+                        </Badge>
+                      )}
                     </div>
                     {gameweek && (
                       <Link to="/gameweeks">
@@ -747,6 +791,28 @@ const Fixtures: React.FC = () => {
 
                       {canEditFixtures && (
                         <>
+                          {/* Tagger Assignment - Compact version */}
+                          <div className="relative group">
+                            <select
+                              value={fixture.assigned_tagger_id || ''}
+                              onChange={(e) => {
+                                const taggerId = e.target.value ? parseInt(e.target.value) : undefined;
+                                handleAssignTagger(fixture.id, taggerId);
+                              }}
+                              className="h-8 px-3 py-2 text-sm border border-gray-300 bg-gray-50 hover:bg-gray-100 rounded-md font-medium shadow-md cursor-pointer min-w-[80px]"
+                              title={`Currently assigned to: ${fixture.assigned_tagger?.username || 'Anyone'}`}
+                            >
+                              <option value="">🌐 Anyone</option>
+                              {users
+                                .filter(u => u.role === 'tagger' && u.is_active)
+                                .map(tagger => (
+                                  <option key={tagger.id} value={tagger.id}>
+                                    🏷️ {tagger.username}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+
                           <Button
                             onClick={() => openEditModal(fixture)}
                             variant="ghost"
