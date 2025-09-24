@@ -7,7 +7,8 @@ import {
   ArrowLeftOnRectangleIcon,
   HandRaisedIcon,
   ShieldCheckIcon,
-  TrophyIcon
+  TrophyIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 import { Player, TeamLineup } from '../types';
 import { eventsApi } from '../utils/api';
@@ -39,6 +40,13 @@ const eventTypes: EventType[] = [
     icon: FireIcon,
     color: 'text-green-600',
     bgColor: 'bg-green-100 hover:bg-green-200'
+  },
+  {
+    key: 'assist',
+    label: 'Assist',
+    icon: UserPlusIcon,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100 hover:bg-purple-200'
   },
   {
     key: 'yellow_card',

@@ -116,6 +116,7 @@ export interface Lineup {
   player_id: number;
   is_starter: boolean;
   position_played?: string;
+  sent_off: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -130,6 +131,7 @@ export interface CreateLineupData {
   player_id: number;
   is_starter: boolean;
   position_played?: string;
+  sent_off?: boolean;
 }
 
 export interface TeamLineup {

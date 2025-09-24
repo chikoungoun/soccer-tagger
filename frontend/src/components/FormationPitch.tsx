@@ -193,8 +193,8 @@ const FormationPitch: React.FC<FormationPitchProps> = ({
     }
   };
 
-  const renderPlayer = (player: Player, position: { x: number; y: number }, teamColor: string) => {
-    const hasRedCard = redCardPlayers.has(player.id);
+  const renderPlayer = (player: Player, position: { x: number; y: number }, teamColor: string, isSentOff: boolean = false) => {
+    const hasRedCard = redCardPlayers.has(player.id) || isSentOff;
     const hasScored = goalScorers.has(player.id);
 
     return (
@@ -266,6 +266,26 @@ const FormationPitch: React.FC<FormationPitchProps> = ({
               strokeWidth="0.2"
               rx="0.3"
             />
+            {/* "SENT OFF" banner */}
+            <rect
+              x={position.x - 8}
+              y={position.y + 15}
+              width="16"
+              height="3"
+              fill="#DC2626"
+              stroke="#B91C1C"
+              strokeWidth="0.2"
+              rx="0.5"
+            />
+            <text
+              x={position.x}
+              y={position.y + 17.2}
+              textAnchor="middle"
+              className="fill-white font-bold pointer-events-none"
+              fontSize="1.2"
+            >
+              SENT OFF
+            </text>
           </g>
         )}
       </g>
@@ -275,13 +295,13 @@ const FormationPitch: React.FC<FormationPitchProps> = ({
   const renderTeamPlayers = (lineup: TeamLineup, teamSide: 'home' | 'away') => {
     const teamColor = lineup.team.primary_color || (teamSide === 'home' ? '#3B82F6' : '#EF4444');
 
-
     return lineup.starters
       .filter((lineupPlayer) => lineupPlayer.player) // Ensure player exists
       .map((lineupPlayer) => {
         const player = lineupPlayer.player;
         const coordinates = getPlayerFormationPosition(player, lineup, teamSide);
-        return renderPlayer(player, coordinates, teamColor);
+        const isSentOff = lineupPlayer.sent_off || false; // Check sent_off status from lineup
+        return renderPlayer(player, coordinates, teamColor, isSentOff);
       });
   };
 

@@ -102,6 +102,7 @@ class Lineup(Base):
     is_starter = Column(Boolean, default=True)  # True for starting XI, False for substitutes
     position_played = Column(String(50), nullable=True)  # Position for this specific match (can differ from player's main position)
     formation = Column(String(10), nullable=True)  # Formation like "4-4-2", "3-5-2"
+    sent_off = Column(Boolean, default=False)  # True when player receives red card, stays in lineup but marked as sent off
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

@@ -50,7 +50,7 @@ def calculate_player_minutes(fixture_id: int, db: Session):
 
         player_data = player_minutes[player_id]
 
-        # Calculate minutes since last event for players currently on field
+        # Calculate minutes since last event for players currently on field and not red carded
         if player_data['is_on_field'] and not player_data['red_carded']:
             minutes_since_last = calculate_minutes_between_events(
                 player_data['last_event_half'], player_data['last_event_minute'],
@@ -343,7 +343,7 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         raise HTTPException(status_code=404, detail="Player not found")
 
     # Validate event type
-    valid_events = ["goal", "yellow_card", "red_card", "substitution_in", "substitution_out", "penalty_miss", "penalty_saved"]
+    valid_events = ["goal", "assist", "yellow_card", "red_card", "substitution_in", "substitution_out", "penalty_miss", "penalty_saved"]
     if event.event_type not in valid_events:
         raise HTTPException(status_code=400, detail=f"Invalid event type. Must be one of: {', '.join(valid_events)}")
 
@@ -390,15 +390,15 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
             red_card_event.created_at = datetime.utcnow() + timedelta(seconds=1)
             db.add(red_card_event)
 
-            # Also remove player from lineup immediately
+            # Mark player as sent off instead of removing from lineup
             lineup_entry = db.query(Lineup).filter(
                 Lineup.fixture_id == fixture_id,
                 Lineup.player_id == event.player_id
             ).first()
             if lineup_entry:
-                db.delete(lineup_entry)
+                lineup_entry.sent_off = True
 
-    # Special handling for red card: automatically remove player from lineup
+    # Special handling for red card: mark player as sent off instead of removing from lineup
     if event.event_type == "red_card":
         # Find the player's lineup entry for this fixture
         lineup_entry = db.query(Lineup).filter(
@@ -407,8 +407,8 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         ).first()
 
         if lineup_entry:
-            # Remove the player from the lineup (they're sent off)
-            db.delete(lineup_entry)
+            # Mark the player as sent off instead of removing them from lineup
+            lineup_entry.sent_off = True
 
     # Special handling for goal: automatically update fixture score
     if event.event_type == "goal":
@@ -489,7 +489,7 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         raise HTTPException(status_code=404, detail="Player not found")
 
     # Validate event type
-    valid_events = ["goal", "yellow_card", "red_card", "substitution_in", "substitution_out", "penalty_miss", "penalty_saved"]
+    valid_events = ["goal", "assist", "yellow_card", "red_card", "substitution_in", "substitution_out", "penalty_miss", "penalty_saved"]
     if event_data.event_type not in valid_events:
         raise HTTPException(status_code=400, detail=f"Invalid event type. Must be one of: {', '.join(valid_events)}")
 
@@ -506,18 +506,21 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
 
     # Handle red card logic
     if event_data.event_type == "red_card" and old_event_type != "red_card":
-        # Event changed TO red card - remove player from lineup
+        # Event changed TO red card - mark player as sent off
         lineup_entry = db.query(Lineup).filter(
             Lineup.fixture_id == event.fixture_id,
             Lineup.player_id == event_data.player_id
         ).first()
         if lineup_entry:
-            db.delete(lineup_entry)
+            lineup_entry.sent_off = True
     elif old_event_type == "red_card" and event_data.event_type != "red_card":
-        # Event changed FROM red card to something else
-        # Note: We don't automatically add the player back to lineup as they might have been substituted
-        # This would need manual intervention by the match manager
-        pass
+        # Event changed FROM red card to something else - unmark sent off status
+        lineup_entry = db.query(Lineup).filter(
+            Lineup.fixture_id == event.fixture_id,
+            Lineup.player_id == event_data.player_id
+        ).first()
+        if lineup_entry:
+            lineup_entry.sent_off = False
 
     # Handle goal scoring changes
     fixture = db.query(Fixture).filter(Fixture.id == event.fixture_id).first()

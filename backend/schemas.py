@@ -167,6 +167,7 @@ class LineupBase(BaseModel):
     player_id: int
     is_starter: bool = True
     position_played: Optional[str] = None
+    sent_off: bool = False
 
 class LineupCreate(LineupBase):
     pass
@@ -174,6 +175,7 @@ class LineupCreate(LineupBase):
 class LineupUpdate(BaseModel):
     is_starter: Optional[bool] = None
     position_played: Optional[str] = None
+    sent_off: Optional[bool] = None
 
 class Lineup(LineupBase):
     id: int
@@ -192,27 +194,6 @@ class TeamLineup(BaseModel):
     starters: List[LineupWithPlayer] = []
     substitutes: List[LineupWithPlayer] = []
 
-# User schemas
-class UserBase(BaseModel):
-    username: str
-    email: str
-    role: str = "tagger"
-    is_active: bool = True
-
-class UserCreate(UserBase):
-    password: str
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        from_attributes = True
 
 class FixtureWithLineups(FixtureWithTeams):
     home_lineup: Optional[TeamLineup] = None
