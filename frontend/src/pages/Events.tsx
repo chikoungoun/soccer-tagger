@@ -11,8 +11,8 @@ import {
   SparklesIcon,
   ChevronDownIcon
 } from '@heroicons/react/24/outline';
-import { fixturesApi, eventsApi } from '../utils/api';
-import { FixtureWithTeams } from '../types';
+import { fixturesApi, eventsApi, gameweeksApi } from '../utils/api';
+import { FixtureWithTeams, Gameweek } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -30,6 +30,7 @@ interface Event {
   fixture: FixtureWithTeams;
   player_name?: string;
   team_name: string;
+  gameweek_code: string;
 }
 
 const Events: React.FC = () => {
@@ -39,6 +40,7 @@ const Events: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [gameweeks, setGameweeks] = useState<Gameweek[]>([]);
 
   useEffect(() => {
     fetchAllEvents();
@@ -49,8 +51,13 @@ const Events: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // First get all completed fixtures
-      const fixtures = await fixturesApi.getAll();
+      // First get all completed fixtures and gameweeks
+      const [fixtures, gameweeksData] = await Promise.all([
+        fixturesApi.getAll(),
+        gameweeksApi.getAll()
+      ]);
+
+      setGameweeks(gameweeksData);
       const completedFixtures = fixtures.filter(f => f.status === 'completed');
 
       // Get events for each completed fixture
@@ -60,11 +67,15 @@ const Events: React.FC = () => {
         try {
           const fixtureEvents = await eventsApi.getEvents(fixture.id);
 
-          // Add fixture and team info to each event
+          // Find the gameweek for this fixture
+          const gameweek = gameweeksData.find(gw => gw.id === fixture.gameweek_id);
+
+          // Add fixture, team, and gameweek info to each event
           const enrichedEvents = fixtureEvents.map(event => ({
             ...event,
             fixture,
-            team_name: event.team_id === fixture.home_team.id ? fixture.home_team.team_code_name : fixture.away_team.team_code_name
+            team_name: event.team_id === fixture.home_team.id ? fixture.home_team.team_code_name : fixture.away_team.team_code_name,
+            gameweek_code: gameweek?.gameweek_code || 'N/A'
           }));
 
           allEvents.push(...enrichedEvents);
@@ -361,6 +372,12 @@ const Events: React.FC = () => {
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                           <div className="flex items-center space-x-2">
+                            <FlagIcon className="h-4 w-4" />
+                            <span>GW</span>
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                          <div className="flex items-center space-x-2">
                             <ClockIcon className="h-4 w-4" />
                             <span>Event Time</span>
                           </div>
@@ -423,6 +440,11 @@ const Events: React.FC = () => {
                           <td className="px-3 py-2">
                             <div className="text-xs text-gray-700 dark:text-gray-300">
                               {formatDateTime(event.fixture)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                              {event.gameweek_code}
                             </div>
                           </td>
                           <td className="px-3 py-2">
