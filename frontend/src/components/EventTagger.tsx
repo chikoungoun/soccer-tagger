@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Player, TeamLineup } from '../types';
 import { eventsApi } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EventTaggerProps {
   fixtureId: number;
@@ -18,6 +19,7 @@ interface EventTaggerProps {
   currentMinute: number;
   currentHalf: number;
   onEventCreated?: () => void;
+  onLineupUpdated?: (homeLineup: TeamLineup, awayLineup: TeamLineup) => void;
 }
 
 interface EventType {
@@ -79,8 +81,10 @@ const EventTagger: React.FC<EventTaggerProps> = ({
   awayTeamLineup,
   currentMinute,
   currentHalf,
-  onEventCreated
+  onEventCreated,
+  onLineupUpdated
 }) => {
+  const { user } = useAuth();
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedPlayerOut, setSelectedPlayerOut] = useState<Player | null>(null);
@@ -93,16 +97,65 @@ const EventTagger: React.FC<EventTaggerProps> = ({
   const [activeHomeLineup, setActiveHomeLineup] = useState(homeTeamLineup);
   const [activeAwayLineup, setActiveAwayLineup] = useState(awayTeamLineup);
 
+  // Track sent-off players
+  const [sentOffPlayers, setSentOffPlayers] = useState<Set<number>>(new Set());
+
+  // Track the current fixture ID to detect fixture changes
+  const [currentFixtureId, setCurrentFixtureId] = useState<number | null>(null);
+
+  // Check if current user is admin
+  const isAdmin = user?.role === 'super_admin';
+
   // Update minute when timer changes
   React.useEffect(() => {
     setCustomMinute(currentMinute);
   }, [currentMinute]);
 
-  // Reset active lineups when props change (new match)
+  // Handle fixture changes and lineup initialization
   React.useEffect(() => {
-    setActiveHomeLineup(homeTeamLineup);
-    setActiveAwayLineup(awayTeamLineup);
-  }, [homeTeamLineup, awayTeamLineup]);
+    // If fixture changed, reset lineups completely
+    if (currentFixtureId !== fixtureId) {
+      setCurrentFixtureId(fixtureId);
+      setActiveHomeLineup(homeTeamLineup);
+      setActiveAwayLineup(awayTeamLineup);
+      setSentOffPlayers(new Set()); // Reset sent-off players for new match
+      return;
+    }
+
+    // If same fixture but lineups not initialized, set them
+    if (!activeHomeLineup && homeTeamLineup) {
+      setActiveHomeLineup(homeTeamLineup);
+    }
+    if (!activeAwayLineup && awayTeamLineup) {
+      setActiveAwayLineup(awayTeamLineup);
+    }
+  }, [fixtureId, homeTeamLineup, awayTeamLineup, currentFixtureId, activeHomeLineup, activeAwayLineup]);
+
+
+  // Fetch match events to track sent-off players
+  React.useEffect(() => {
+    const fetchMatchEvents = async () => {
+      try {
+        const events = await eventsApi.getEvents(fixtureId);
+        const redCardEvents = events.filter(event => event.event_type === 'red_card');
+        const sentOffPlayerIds = new Set(redCardEvents.map(event => event.player_id));
+        setSentOffPlayers(sentOffPlayerIds);
+      } catch (error) {
+        console.error('Error fetching match events:', error);
+      }
+    };
+
+    if (fixtureId) {
+      fetchMatchEvents();
+    }
+  }, [fixtureId]);
+
+  // Update sent-off players when events are created
+  const updateSentOffPlayers = (eventType: string, playerId: number) => {
+    if (eventType === 'red_card') {
+      setSentOffPlayers(prev => new Set(prev).add(playerId));
+    }
+  };
 
   const handleEventTypeSelect = (eventType: string) => {
     setSelectedEventType(eventType);
@@ -130,39 +183,99 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                        activeHomeLineup?.substitutes.some(lineup => lineup.player.id === playerOut.id);
 
     if (isHomeTeam && activeHomeLineup) {
-      // Update home team lineup
-      const newStarters = activeHomeLineup.starters.map(lineup =>
-        lineup.player.id === playerOut.id
-          ? { ...lineup, player: playerIn }
-          : lineup
-      );
+      // Find the outgoing player's lineup entry to preserve position
+      const outgoingLineup = activeHomeLineup.starters.find(lineup => lineup.player.id === playerOut.id);
+      const incomingSubLineup = activeHomeLineup.substitutes.find(lineup => lineup.player.id === playerIn.id);
 
-      const newSubstitutes = activeHomeLineup.substitutes.filter(lineup =>
-        lineup.player.id !== playerIn.id
-      );
+      if (outgoingLineup && incomingSubLineup) {
+        // Remove the outgoing player from starters and add incoming player with same position
+        const newStarters = activeHomeLineup.starters
+          .filter(lineup => lineup.player.id !== playerOut.id)
+          .concat([{
+            ...incomingSubLineup,
+            player: playerIn,
+            position_played: outgoingLineup.position_played, // Keep the position
+            is_starter: true
+          }]);
 
-      setActiveHomeLineup({
-        ...activeHomeLineup,
-        starters: newStarters,
-        substitutes: newSubstitutes
-      });
+        // Remove the incoming player from substitutes and add outgoing player
+        const newSubstitutes = activeHomeLineup.substitutes
+          .filter(lineup => lineup.player.id !== playerIn.id)
+          .concat([{
+            ...outgoingLineup,
+            player: playerOut,
+            is_starter: false
+          }]);
+
+        setActiveHomeLineup(prevLineup => {
+          if (!prevLineup) {
+            return prevLineup;
+          }
+
+          // Create completely new objects to ensure React detects the change
+          const updatedLineup = {
+            ...prevLineup,
+            starters: newStarters.map(starter => ({ ...starter })),
+            substitutes: newSubstitutes.map(sub => ({ ...sub }))
+          };
+
+          // Notify parent of lineup change if callback provided
+          if (onLineupUpdated && updatedLineup && activeAwayLineup) {
+            setTimeout(() => {
+              onLineupUpdated(updatedLineup, activeAwayLineup);
+            }, 0);
+          }
+
+          return updatedLineup;
+        });
+      }
     } else if (activeAwayLineup) {
-      // Update away team lineup
-      const newStarters = activeAwayLineup.starters.map(lineup =>
-        lineup.player.id === playerOut.id
-          ? { ...lineup, player: playerIn }
-          : lineup
-      );
+      // Find the outgoing player's lineup entry to preserve position
+      const outgoingLineup = activeAwayLineup.starters.find(lineup => lineup.player.id === playerOut.id);
+      const incomingSubLineup = activeAwayLineup.substitutes.find(lineup => lineup.player.id === playerIn.id);
 
-      const newSubstitutes = activeAwayLineup.substitutes.filter(lineup =>
-        lineup.player.id !== playerIn.id
-      );
+      if (outgoingLineup && incomingSubLineup) {
+        // Remove the outgoing player from starters and add incoming player with same position
+        const newStarters = activeAwayLineup.starters
+          .filter(lineup => lineup.player.id !== playerOut.id)
+          .concat([{
+            ...incomingSubLineup,
+            player: playerIn,
+            position_played: outgoingLineup.position_played, // Keep the position
+            is_starter: true
+          }]);
 
-      setActiveAwayLineup({
-        ...activeAwayLineup,
-        starters: newStarters,
-        substitutes: newSubstitutes
-      });
+        // Remove the incoming player from substitutes and add outgoing player
+        const newSubstitutes = activeAwayLineup.substitutes
+          .filter(lineup => lineup.player.id !== playerIn.id)
+          .concat([{
+            ...outgoingLineup,
+            player: playerOut,
+            is_starter: false
+          }]);
+
+        setActiveAwayLineup(prevLineup => {
+          if (!prevLineup) {
+            return prevLineup;
+          }
+
+          // Create completely new objects to ensure React detects the change
+          const updatedLineup = {
+            ...prevLineup,
+            starters: newStarters.map(starter => ({ ...starter })),
+            substitutes: newSubstitutes.map(sub => ({ ...sub }))
+          };
+
+          // Notify parent of lineup change if callback provided
+          if (onLineupUpdated && updatedLineup && activeHomeLineup) {
+            setTimeout(() => {
+              onLineupUpdated(activeHomeLineup, updatedLineup);
+            }, 0);
+          }
+
+          return updatedLineup;
+        });
+      }
     }
   };
 
@@ -201,6 +314,7 @@ const EventTagger: React.FC<EventTaggerProps> = ({
 
         // Update lineup state after successful substitution
         updateLineupAfterSubstitution(selectedPlayerOut!, selectedPlayerIn!);
+
       } else {
         // Create regular event
         await eventsApi.createEvent(fixtureId, {
@@ -210,6 +324,9 @@ const EventTagger: React.FC<EventTaggerProps> = ({
           half: currentHalf,
           extra_info: extraInfo || null
         });
+
+        // Update sent-off players list if it's a red card
+        updateSentOffPlayers(selectedEventType, selectedPlayer!.id);
       }
 
       // Reset form
@@ -261,21 +378,31 @@ const EventTagger: React.FC<EventTaggerProps> = ({
   // Get filtered players based on event type
   const getFilteredPlayers = (isHomeTeam: boolean) => {
     const lineup = isHomeTeam ? activeHomeLineup : activeAwayLineup;
+    const teamName = isHomeTeam ? 'Home' : 'Away';
 
-    if (!lineup) return { starters: [], substitutes: [] };
+    if (!lineup) return { starters: [], substitutes: [], sentOff: [] };
+
 
     if (selectedEventType === 'substitution') {
-      // For substitution, show both starters and substitutes
-      return {
-        starters: lineup.starters,
-        substitutes: lineup.substitutes
+      // For substitution, show both starters and substitutes (but not sent-off players)
+      const filtered = {
+        starters: lineup.starters.filter(l => !sentOffPlayers.has(l.player.id)),
+        substitutes: lineup.substitutes,
+        sentOff: []
       };
+      return filtered;
     } else {
-      // For all other events (goals, cards, penalties), only show starters (players on field)
-      return {
-        starters: lineup.starters,
-        substitutes: []
+      // For all other events (goals, cards, penalties)
+      const activeStarters = lineup.starters.filter(l => !sentOffPlayers.has(l.player.id));
+      const sentOffStarters = lineup.starters.filter(l => sentOffPlayers.has(l.player.id));
+
+      const filtered = {
+        starters: activeStarters, // Only show active players on field
+        substitutes: [],
+        sentOff: isAdmin ? sentOffStarters : [] // Only show sent-off players to admins
       };
+
+      return filtered;
     }
   };
 
@@ -395,6 +522,39 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* Sent-off Players (Admin Only) */}
+                  {(() => {
+                    const filteredHome = getFilteredPlayers(true);
+                    return filteredHome.sentOff.length > 0 && (
+                      <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
+                        <h5 className="text-xs font-medium text-red-700 mb-1 flex items-center">
+                          <XCircleIcon className="h-3 w-3 mr-1" />
+                          Sent Off Players (Admin Override)
+                        </h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {filteredHome.sentOff.map((lineup) => (
+                            <button
+                              key={lineup.player.id}
+                              onClick={() => handlePlayerSelect(lineup.player)}
+                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75"
+                            >
+                              <div className="text-sm font-medium text-red-800 flex items-center">
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                                {lineup.player.name}
+                              </div>
+                              <div className="text-xs text-red-600">
+                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position} (SENT OFF)
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-red-600 mt-1 italic">
+                          ⚠️ Admin only: Select sent-off players to correct tagger mistakes
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </>
               );
             })()}
@@ -463,6 +623,39 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* Sent-off Players (Admin Only) */}
+                  {(() => {
+                    const filteredAway = getFilteredPlayers(false);
+                    return filteredAway.sentOff.length > 0 && (
+                      <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
+                        <h5 className="text-xs font-medium text-red-700 mb-1 flex items-center">
+                          <XCircleIcon className="h-3 w-3 mr-1" />
+                          Sent Off Players (Admin Override)
+                        </h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {filteredAway.sentOff.map((lineup) => (
+                            <button
+                              key={lineup.player.id}
+                              onClick={() => handlePlayerSelect(lineup.player)}
+                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75"
+                            >
+                              <div className="text-sm font-medium text-red-800 flex items-center">
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                                {lineup.player.name}
+                              </div>
+                              <div className="text-xs text-red-600">
+                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position} (SENT OFF)
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-red-600 mt-1 italic">
+                          ⚠️ Admin only: Select sent-off players to correct tagger mistakes
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </>
               );
             })()}

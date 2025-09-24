@@ -36,6 +36,10 @@ const MatchCenter: React.FC = () => {
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // Track dynamically updated lineups after substitutions
+  const [currentHomeLineup, setCurrentHomeLineup] = useState<TeamLineup | null>(null);
+  const [currentAwayLineup, setCurrentAwayLineup] = useState<TeamLineup | null>(null);
+
   useEffect(() => {
     if (id) {
       fetchData();
@@ -49,10 +53,22 @@ const MatchCenter: React.FC = () => {
       const fixtureData = await fixturesApi.getById(parseInt(id));
       setFixture(fixtureData);
 
+      // Reset current lineups when loading a new fixture
+      setCurrentHomeLineup(null);
+      setCurrentAwayLineup(null);
+
       // Fetch fixture lineups
       try {
         const fixtureLineupsData = await lineupsApi.getFixtureLineups(parseInt(id));
         setFixtureWithLineups(fixtureLineupsData);
+
+        // Initialize current lineups only if they haven't been set (to avoid overwriting substitutions)
+        if (!currentHomeLineup && fixtureLineupsData.home_lineup) {
+          setCurrentHomeLineup(fixtureLineupsData.home_lineup);
+        }
+        if (!currentAwayLineup && fixtureLineupsData.away_lineup) {
+          setCurrentAwayLineup(fixtureLineupsData.away_lineup);
+        }
       } catch (error) {
         console.error('Error fetching lineups:', error);
         // Don't fail the whole page if lineups aren't set
@@ -101,6 +117,11 @@ const MatchCenter: React.FC = () => {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditingEvent(null);
+  };
+
+  const handleLineupUpdated = (homeLineup: TeamLineup, awayLineup: TeamLineup) => {
+    setCurrentHomeLineup(homeLineup);
+    setCurrentAwayLineup(awayLineup);
   };
 
   const formatDate = (dateString: string) => {
@@ -254,8 +275,19 @@ const MatchCenter: React.FC = () => {
                   {fixture.home_score} - {fixture.away_score}
                 </div>
                 <div className="text-xl text-white/90 font-medium">
-                  {currentMinute > 0 && fixture.status === 'live' && (
-                    <span>{currentMinute}'</span>
+                  {fixture.status === 'completed' && (
+                    <span className="bg-white/20 px-3 py-1 rounded-full">Full Time</span>
+                  )}
+                  {fixture.status === 'live' && currentHalf > 0 && (
+                    <div className="space-y-1">
+                      <div>{currentMinute > 0 ? `${currentMinute}'` : ''}</div>
+                      <div className="text-sm bg-white/20 px-2 py-1 rounded-full inline-block">
+                        {currentHalf === 1 ? '1st Half' : currentHalf === 2 ? '2nd Half' : currentHalf === -1 ? 'Half Time' : ''}
+                      </div>
+                    </div>
+                  )}
+                  {fixture.status === 'scheduled' && (
+                    <span className="text-white/70">Not Started</span>
                   )}
                 </div>
               </div>
@@ -310,11 +342,12 @@ const MatchCenter: React.FC = () => {
           <CardContent>
             <EventTagger
               fixtureId={fixture.id}
-              homeTeamLineup={fixtureWithLineups?.home_lineup || null}
-              awayTeamLineup={fixtureWithLineups?.away_lineup || null}
+              homeTeamLineup={currentHomeLineup || fixtureWithLineups?.home_lineup || null}
+              awayTeamLineup={currentAwayLineup || fixtureWithLineups?.away_lineup || null}
               currentMinute={currentMinute}
               currentHalf={currentHalf}
               onEventCreated={handleEventCreated}
+              onLineupUpdated={handleLineupUpdated}
             />
           </CardContent>
         </Card>
@@ -333,8 +366,8 @@ const MatchCenter: React.FC = () => {
           <CardContent>
             <EventsList
               fixtureId={fixture.id}
-              homeTeamLineup={fixtureWithLineups?.home_lineup || null}
-              awayTeamLineup={fixtureWithLineups?.away_lineup || null}
+              homeTeamLineup={currentHomeLineup || fixtureWithLineups?.home_lineup || null}
+              awayTeamLineup={currentAwayLineup || fixtureWithLineups?.away_lineup || null}
               refreshTrigger={eventsRefreshTrigger}
               onEventDeleted={handleEventDeleted}
               onEventEdit={handleEventEdit}
@@ -344,11 +377,11 @@ const MatchCenter: React.FC = () => {
       </div>
 
       {/* Edit Event Modal */}
-      {showEditModal && editingEvent && fixtureWithLineups?.home_lineup && fixtureWithLineups?.away_lineup && (
+      {showEditModal && editingEvent && (currentHomeLineup || fixtureWithLineups?.home_lineup) && (currentAwayLineup || fixtureWithLineups?.away_lineup) && (
         <EditEventModal
           event={editingEvent}
-          homeTeamLineup={fixtureWithLineups.home_lineup}
-          awayTeamLineup={fixtureWithLineups.away_lineup}
+          homeTeamLineup={currentHomeLineup || fixtureWithLineups.home_lineup}
+          awayTeamLineup={currentAwayLineup || fixtureWithLineups.away_lineup}
           onSave={handleEventUpdate}
           onClose={closeEditModal}
         />
