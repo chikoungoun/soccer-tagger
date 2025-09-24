@@ -1,6 +1,7 @@
 export interface Team {
   id: number;
   name: string;
+  team_code_name: string;
   logo_url?: string;
   primary_color?: string;
   secondary_color?: string;
@@ -51,6 +52,7 @@ export interface TeamWithPlayers extends Team {
 
 export interface CreateTeamData {
   name: string;
+  team_code_name: string;
   logo_url?: string;
   primary_color?: string;
   secondary_color?: string;
@@ -82,6 +84,7 @@ export interface CreateFixtureData {
 export interface Gameweek {
   id: number;
   week_number: number;
+  gameweek_code?: string;
   name: string;
   start_date: string;
   end_date: string;
@@ -96,6 +99,7 @@ export interface GameweekWithFixtures extends Gameweek {
 
 export interface CreateGameweekData {
   week_number: number;
+  gameweek_code?: string;
   name: string;
   start_date: string;
   end_date: string;

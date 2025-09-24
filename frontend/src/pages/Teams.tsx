@@ -333,7 +333,14 @@ const Teams: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold mb-2">{team.name}</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-bold">{team.name}</h3>
+                      {team.team_code_name && (
+                        <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <span className="text-sm font-bold text-white">{team.team_code_name}</span>
+                        </div>
+                      )}
+                    </div>
                     {team.stadium && (
                       <div className="flex items-center text-white/90 text-sm">
                         <MapPinIcon className="h-4 w-4 mr-1" />

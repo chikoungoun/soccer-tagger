@@ -74,6 +74,7 @@ const Fixtures: React.FC = () => {
     // Initialize filters from URL parameters
     const gameweekParam = searchParams.get('gameweek');
     const statusParam = searchParams.get('status');
+    const createParam = searchParams.get('create');
 
     if (gameweekParam) {
       setFilters(prev => ({ ...prev, gameweekId: gameweekParam }));
@@ -81,6 +82,11 @@ const Fixtures: React.FC = () => {
 
     if (statusParam) {
       setFilters(prev => ({ ...prev, status: statusParam }));
+    }
+
+    // Auto-open fixture creation modal if create=true
+    if (createParam === 'true') {
+      setShowFixtureModal(true);
     }
   }, [searchParams]);
 
@@ -739,6 +745,7 @@ const Fixtures: React.FC = () => {
         fixture={editingFixture}
         teams={teams}
         gameweeks={gameweeks}
+        defaultGameweekId={filters.gameweekId ? parseInt(filters.gameweekId) : undefined}
         onSave={editingFixture ? handleUpdateFixture : handleCreateFixture}
         onClose={closeModals}
         isOpen={showFixtureModal}

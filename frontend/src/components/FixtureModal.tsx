@@ -16,12 +16,13 @@ interface FixtureModalProps {
   fixture?: FixtureWithTeams | null;
   teams: Team[];
   gameweeks?: Gameweek[];
+  defaultGameweekId?: number;
   onSave: (data: CreateFixtureData | Partial<CreateFixtureData>) => void;
   onClose: () => void;
   isOpen: boolean;
 }
 
-const FixtureModal: React.FC<FixtureModalProps> = ({ fixture, teams, gameweeks = [], onSave, onClose, isOpen }) => {
+const FixtureModal: React.FC<FixtureModalProps> = ({ fixture, teams, gameweeks = [], defaultGameweekId, onSave, onClose, isOpen }) => {
   const [formData, setFormData] = useState<CreateFixtureData>({
     home_team_id: 0,
     away_team_id: 0,
@@ -53,7 +54,8 @@ const FixtureModal: React.FC<FixtureModalProps> = ({ fixture, teams, gameweeks =
       setFormData(prev => ({
         ...prev,
         home_team_id: teams[0].id,
-        away_team_id: teams[1].id
+        away_team_id: teams[1].id,
+        gameweek_id: defaultGameweekId
       }));
     } else {
       // Reset form for new fixture
@@ -62,11 +64,11 @@ const FixtureModal: React.FC<FixtureModalProps> = ({ fixture, teams, gameweeks =
         away_team_id: 0,
         match_date: '',
         venue: '',
-        gameweek_id: undefined
+        gameweek_id: defaultGameweekId
       });
     }
     setErrors({});
-  }, [fixture, teams, isOpen]);
+  }, [fixture, teams, defaultGameweekId, isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

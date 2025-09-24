@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
@@ -11,7 +11,6 @@ import {
   ClockIcon,
   TrophyIcon,
   CheckIcon,
-  BoltIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   EyeIcon,
@@ -30,6 +29,7 @@ import { Button } from '@/components/ui/button';
 
 const Gameweeks: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [gameweeks, setGameweeks] = useState<Gameweek[]>([]);
   const [allFixtures, setAllFixtures] = useState<FixtureWithTeams[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +62,14 @@ const Gameweeks: React.FC = () => {
       await gameweeksApi.create(gameweekData);
       fetchGameweeks();
       setShowGameweekModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating gameweek:', error);
+
+      // Extract the error message from the API response
+      const errorMessage = error?.response?.data?.detail || 'Failed to create gameweek. Please try again.';
+
+      // Show user-friendly alert
+      alert(errorMessage);
     }
   };
 
@@ -93,30 +99,6 @@ const Gameweeks: React.FC = () => {
     }
   };
 
-  const handleGenerateFixtures = async (gameweekId: number) => {
-    try {
-      const result = await gameweeksApi.generateFixtures(gameweekId);
-      alert(result.message);
-      fetchGameweeks();
-      // Also refresh the fixtures for this gameweek if it's expanded
-      if (expandedGameweeks.has(gameweekId)) {
-        const gameweekWithFixtures = await gameweeksApi.getById(gameweekId);
-        setGameweekFixtures(prev => ({
-          ...prev,
-          [gameweekId]: gameweekWithFixtures
-        }));
-      }
-    } catch (error: any) {
-      console.error('Error generating fixtures:', error);
-      const errorMessage = error.response?.data?.detail || 'Failed to generate fixtures';
-
-      if (errorMessage.includes('maximum number')) {
-        alert(`This gameweek already has the maximum number of fixtures (8). You can view them by expanding the gameweek details.`);
-      } else {
-        alert(`Error: ${errorMessage}`);
-      }
-    }
-  };
 
   const handleActivateGameweek = async (gameweekId: number) => {
     try {
@@ -159,6 +141,10 @@ const Gameweeks: React.FC = () => {
     }
 
     setExpandedGameweeks(newExpanded);
+  };
+
+  const handleCreateFixture = (gameweekId: number) => {
+    navigate(`/fixtures?create=true&gameweek=${gameweekId}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -284,9 +270,16 @@ const Gameweeks: React.FC = () => {
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <div className="flex items-center space-x-3 mb-2">
-                          <FlagIcon className="h-6 w-6 text-white/90" />
-                          <h3 className="text-2xl font-bold">{gameweek.name}</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <FlagIcon className="h-6 w-6 text-white/90" />
+                            <h3 className="text-2xl font-bold">{gameweek.name}</h3>
+                          </div>
+                          {gameweek.gameweek_code && (
+                            <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                              <span className="text-sm font-bold text-white">{gameweek.gameweek_code}</span>
+                            </div>
+                          )}
                         </div>
                         <Badge
                           variant="secondary"
@@ -344,21 +337,19 @@ const Gameweeks: React.FC = () => {
                   <div className="space-y-3 mb-4">
                     <div className="flex space-x-2">
                       <Button
-                        onClick={() => handleGenerateFixtures(gameweek.id)}
-                        variant="secondary"
+                        onClick={() => handleCreateFixture(gameweek.id)}
+                        variant="default"
                         size="sm"
                         className="flex-1"
                       >
-                        <BoltIcon className="h-4 w-4 mr-2" />
-                        {allFixtures.filter(f => f.gameweek_id === gameweek.id).length > 0
-                          ? "Regenerate"
-                          : "Generate Fixtures"}
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Create Fixture
                       </Button>
 
                       {!gameweek.is_active && (
                         <Button
                           onClick={() => handleActivateGameweek(gameweek.id)}
-                          variant="default"
+                          variant="secondary"
                           size="sm"
                           className="flex-1"
                         >
@@ -465,14 +456,16 @@ const Gameweeks: React.FC = () => {
                           <div className="text-center py-8">
                             <CalendarDaysIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                             <p className="text-sm text-gray-500">No fixtures scheduled</p>
-                            <Button
-                              onClick={() => handleGenerateFixtures(gameweek.id)}
-                              variant="outline"
-                              size="sm"
-                              className="mt-3"
-                            >
-                              Generate Now
-                            </Button>
+                            <div className="flex justify-center mt-3">
+                              <Button
+                                onClick={() => handleCreateFixture(gameweek.id)}
+                                variant="default"
+                                size="sm"
+                              >
+                                <PlusIcon className="h-4 w-4 mr-2" />
+                                Create Fixture
+                              </Button>
+                            </div>
                           </div>
                         )
                       ) : (

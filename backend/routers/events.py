@@ -149,6 +149,8 @@ class EventResponse(BaseModel):
     minute: int
     half: int
     extra_info: Optional[str]
+    created_by: Optional[int]
+    tagger_name: Optional[str]
     created_at: datetime
 
     class Config:
@@ -352,7 +354,8 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         event_type=event.event_type,
         minute=event.minute,
         half=event.half,
-        extra_info=event.extra_info
+        extra_info=event.extra_info,
+        created_by=current_user.id
     )
 
     db.add(db_event)
@@ -397,6 +400,8 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         minute=db_event.minute,
         half=db_event.half,
         extra_info=db_event.extra_info,
+        created_by=db_event.created_by,
+        tagger_name=current_user.username,
         created_at=db_event.created_at
     )
 
@@ -404,7 +409,8 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
 async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
     """Get all events for a fixture, ordered by minute"""
     events = db.query(MatchEvent).options(
-        joinedload(MatchEvent.player)
+        joinedload(MatchEvent.player),
+        joinedload(MatchEvent.creator)
     ).filter(
         MatchEvent.fixture_id == fixture_id
     ).order_by(
@@ -425,6 +431,8 @@ async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
             minute=event.minute,
             half=event.half,
             extra_info=event.extra_info,
+            created_by=event.created_by,
+            tagger_name=event.creator.username if event.creator else "Unknown",
             created_at=event.created_at
         )
         for event in events
@@ -499,6 +507,9 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     # Recalculate player minutes after event update
     calculate_player_minutes(event.fixture_id, db)
 
+    # Get creator info
+    creator = db.query(User).filter(User.id == event.created_by).first() if event.created_by else None
+
     # Return event with player info
     return EventResponse(
         id=event.id,
@@ -511,6 +522,8 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         minute=event.minute,
         half=event.half,
         extra_info=event.extra_info,
+        created_by=event.created_by,
+        tagger_name=creator.username if creator else "Unknown",
         created_at=event.created_at
     )
 

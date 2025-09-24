@@ -23,6 +23,7 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, index=True, nullable=False)
+    team_code_name = Column(String(10), unique=True, index=True, nullable=True)  # Short code like MUN, LIV, ARS
     logo_url = Column(String(255), nullable=True)
     primary_color = Column(String(7), nullable=True)  # Hex color code like #FF0000
     secondary_color = Column(String(7), nullable=True)  # Hex color code like #0000FF
@@ -58,7 +59,8 @@ class Gameweek(Base):
     __tablename__ = "gameweeks"
 
     id = Column(Integer, primary_key=True, index=True)
-    week_number = Column(Integer, nullable=False)
+    week_number = Column(Integer, nullable=False, unique=True)  # Unique week numbers
+    gameweek_code = Column(String(10), nullable=True, unique=True, index=True)  # Unique codes e.g., "GW1", "GW2"
     name = Column(String(100), nullable=False)  # e.g., "Gameweek 1", "Week 1"
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
@@ -97,6 +99,7 @@ class Lineup(Base):
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
     is_starter = Column(Boolean, default=True)  # True for starting XI, False for substitutes
     position_played = Column(String(50), nullable=True)  # Position for this specific match (can differ from player's main position)
+    formation = Column(String(10), nullable=True)  # Formation like "4-4-2", "3-5-2"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -114,10 +117,12 @@ class MatchEvent(Base):
     minute = Column(Integer, nullable=False)  # Minute of the event (1-90+)
     half = Column(Integer, nullable=False)  # 1 for first half, 2 for second half
     extra_info = Column(Text, nullable=True)  # Additional info like assist, reason for card, etc.
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who created the event
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     fixture = relationship("Fixture")
     player = relationship("Player")
+    creator = relationship("User")
 
 class MatchTimer(Base):
     __tablename__ = "match_timers"

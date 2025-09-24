@@ -56,7 +56,7 @@ def delete_team(team_id: int, db: Session = Depends(get_db)):
 def import_teams_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
     Import teams from CSV file
-    Expected CSV format: name,founded_year,stadium,description
+    Expected CSV format: name,team_code_name,founded_year,stadium,description
     """
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="File must be a CSV")
@@ -94,9 +94,31 @@ def import_teams_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
                     })
                     continue
 
+                # Validate team_code_name
+                if not row.get('team_code_name', '').strip():
+                    failed_teams.append({
+                        'row': row_num,
+                        'data': row,
+                        'error': 'Team code name is required'
+                    })
+                    continue
+
+                team_code_name = row['team_code_name'].strip().upper()
+
+                # Check if team code already exists
+                existing_code = db.query(Team).filter(Team.team_code_name == team_code_name).first()
+                if existing_code:
+                    skipped_teams.append({
+                        'row': row_num,
+                        'data': row,
+                        'reason': f'Team code "{team_code_name}" already exists'
+                    })
+                    continue
+
                 # Prepare team data
                 team_data = {
                     'name': team_name,
+                    'team_code_name': team_code_name,
                     'founded_year': int(row['founded_year']) if row.get('founded_year', '').strip() else None,
                     'stadium': row.get('stadium', '').strip() or None,
                     'description': row.get('description', '').strip() or None

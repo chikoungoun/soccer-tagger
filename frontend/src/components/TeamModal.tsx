@@ -22,6 +22,7 @@ interface TeamModalProps {
 const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose, isOpen }) => {
   const [formData, setFormData] = useState<CreateTeamData>({
     name: '',
+    team_code_name: '',
     logo_url: '',
     primary_color: '#1e40af',
     secondary_color: '#ffffff',
@@ -39,6 +40,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose, isOpen }) 
     if (team) {
       setFormData({
         name: team.name,
+        team_code_name: team.team_code_name || '',
         logo_url: team.logo_url || '',
         primary_color: team.primary_color || '#1e40af',
         secondary_color: team.secondary_color || '#ffffff',
@@ -51,6 +53,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose, isOpen }) 
       // Reset form for new team
       setFormData({
         name: '',
+        team_code_name: '',
         logo_url: '',
         primary_color: '#1e40af',
         secondary_color: '#ffffff',
@@ -70,6 +73,12 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose, isOpen }) 
       newErrors.name = 'Team name is required';
     } else if (formData.name.length < 2) {
       newErrors.name = 'Team name must be at least 2 characters';
+    }
+
+    if (!formData.team_code_name.trim()) {
+      newErrors.team_code_name = 'Team code is required';
+    } else if (formData.team_code_name.length < 2 || formData.team_code_name.length > 10) {
+      newErrors.team_code_name = 'Team code must be between 2-10 characters';
     }
 
     if (formData.founded_year && (formData.founded_year < 1800 || formData.founded_year > new Date().getFullYear())) {
@@ -214,6 +223,29 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, onSave, onClose, isOpen }) 
                     {errors.name}
                   </div>
                 )}
+              </div>
+
+              {/* Team Code Name */}
+              <div className="space-y-2">
+                <Label htmlFor="team_code_name" className="text-sm font-medium">
+                  Team Code *
+                </Label>
+                <Input
+                  id="team_code_name"
+                  name="team_code_name"
+                  value={formData.team_code_name}
+                  onChange={handleChange}
+                  placeholder="e.g., MUN, LIV, ARS"
+                  className={errors.team_code_name ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  maxLength={10}
+                />
+                {errors.team_code_name && (
+                  <div className="flex items-center gap-1 text-sm text-red-600">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.team_code_name}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">Short code for the team (2-10 characters)</p>
               </div>
 
               {/* Founded Year */}

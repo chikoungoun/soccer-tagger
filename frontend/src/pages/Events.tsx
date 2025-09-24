@@ -24,6 +24,8 @@ interface Event {
   player_id?: number;
   team_id: number;
   description?: string;
+  created_by?: number;
+  tagger_name?: string;
   created_at: string;
   fixture: FixtureWithTeams;
   player_name?: string;
@@ -62,7 +64,7 @@ const Events: React.FC = () => {
           const enrichedEvents = fixtureEvents.map(event => ({
             ...event,
             fixture,
-            team_name: event.team_id === fixture.home_team.id ? fixture.home_team.name : fixture.away_team.name
+            team_name: event.team_id === fixture.home_team.id ? fixture.home_team.team_code_name : fixture.away_team.team_code_name
           }));
 
           allEvents.push(...enrichedEvents);
@@ -387,7 +389,12 @@ const Events: React.FC = () => {
                             <span>Player</span>
                           </div>
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                          <div className="flex items-center space-x-2">
+                            <UserIcon className="h-4 w-4" />
+                            <span>Tagger</span>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -403,7 +410,7 @@ const Events: React.FC = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
-                                  {event.fixture.home_team.name} vs {event.fixture.away_team.name}
+                                  {event.fixture.home_team.team_code_name} vs {event.fixture.away_team.team_code_name}
                                 </div>
                                 {event.fixture.home_score !== null && event.fixture.away_score !== null && (
                                   <div className="text-xs text-green-600 dark:text-green-400 font-bold">
@@ -469,12 +476,24 @@ const Events: React.FC = () => {
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {event.description ? (
-                              <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
-                                {event.description}
-                              </span>
+                            {event.tagger_name ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-bold">
+                                    {event.tagger_name.substring(0, 1).toUpperCase()}
+                                  </span>
+                                </div>
+                                <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                                  {event.tagger_name}
+                                </span>
+                              </div>
                             ) : (
-                              <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center">
+                                  <UserIcon className="h-3 w-3 text-white" />
+                                </div>
+                                <span className="text-xs text-gray-400 dark:text-gray-500">Unknown</span>
+                              </div>
                             )}
                           </td>
                         </tr>

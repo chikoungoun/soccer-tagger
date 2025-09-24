@@ -4,6 +4,7 @@ from typing import List, Optional
 
 class TeamBase(BaseModel):
     name: str
+    team_code_name: str
     logo_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
@@ -16,6 +17,7 @@ class TeamCreate(TeamBase):
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
+    team_code_name: Optional[str] = None
     logo_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
@@ -104,6 +106,7 @@ class FixtureWithTeams(Fixture):
 
 class GameweekBase(BaseModel):
     week_number: int
+    gameweek_code: Optional[str] = None
     name: str
     start_date: date
     end_date: date
@@ -114,6 +117,7 @@ class GameweekCreate(GameweekBase):
 
 class GameweekUpdate(BaseModel):
     week_number: Optional[int] = None
+    gameweek_code: Optional[str] = None
     name: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None

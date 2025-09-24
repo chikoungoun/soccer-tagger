@@ -39,7 +39,29 @@ def create_gameweek(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    db_gameweek = Gameweek(**gameweek.dict())
+    gameweek_data = gameweek.dict()
+
+    # Check if week_number already exists
+    existing_week = db.query(Gameweek).filter(Gameweek.week_number == gameweek_data['week_number']).first()
+    if existing_week:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Gameweek with week number {gameweek_data['week_number']} already exists"
+        )
+
+    # Auto-generate gameweek_code if not provided
+    if not gameweek_data.get('gameweek_code'):
+        gameweek_data['gameweek_code'] = f"GW{gameweek_data['week_number']}"
+
+    # Check if gameweek_code already exists
+    existing_code = db.query(Gameweek).filter(Gameweek.gameweek_code == gameweek_data['gameweek_code']).first()
+    if existing_code:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Gameweek with code '{gameweek_data['gameweek_code']}' already exists"
+        )
+
+    db_gameweek = Gameweek(**gameweek_data)
     db.add(db_gameweek)
     db.commit()
     db.refresh(db_gameweek)
@@ -56,6 +78,30 @@ def update_gameweek(gameweek_id: int, gameweek_update: GameweekUpdate, db: Sessi
         raise HTTPException(status_code=404, detail="Gameweek not found")
 
     update_data = gameweek_update.dict(exclude_unset=True)
+
+    # Check uniqueness constraints if being updated
+    if 'week_number' in update_data:
+        existing_week = db.query(Gameweek).filter(
+            Gameweek.week_number == update_data['week_number'],
+            Gameweek.id != gameweek_id
+        ).first()
+        if existing_week:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Gameweek with week number {update_data['week_number']} already exists"
+            )
+
+    if 'gameweek_code' in update_data:
+        existing_code = db.query(Gameweek).filter(
+            Gameweek.gameweek_code == update_data['gameweek_code'],
+            Gameweek.id != gameweek_id
+        ).first()
+        if existing_code:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Gameweek with code '{update_data['gameweek_code']}' already exists"
+            )
+
     for field, value in update_data.items():
         setattr(db_gameweek, field, value)
 
