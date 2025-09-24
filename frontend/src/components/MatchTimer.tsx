@@ -47,9 +47,10 @@ const MatchTimer: React.FC<MatchTimerProps> = ({ fixtureId, hasLineups, onTimerU
         const startTime = new Date(timerData.half_start_time + 'Z'); // Add Z for UTC
         const now = new Date();
         const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
-        setCurrentMinute(Math.max(0, elapsedMinutes));
+        // Soccer minutes start from 1, not 0 (00:26 should be minute 1)
+        setCurrentMinute(Math.max(1, elapsedMinutes + 1));
       } else {
-        setCurrentMinute(timerData.current_minute || 0);
+        setCurrentMinute(Math.max(1, timerData.current_minute || 1));
       }
     } catch (error) {
       console.error('Error fetching timer:', error);

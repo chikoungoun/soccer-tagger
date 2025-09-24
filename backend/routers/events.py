@@ -360,6 +360,44 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
 
     db.add(db_event)
 
+    # Special handling for second yellow card: automatically create red card
+    if event.event_type == "yellow_card":
+        # Check if player already has a yellow card in this match
+        existing_yellow_cards = db.query(MatchEvent).filter(
+            MatchEvent.fixture_id == fixture_id,
+            MatchEvent.player_id == event.player_id,
+            MatchEvent.event_type == "yellow_card",
+            MatchEvent.id != db_event.id  # Exclude the current event we just added
+        ).count()
+
+        # If this is their second yellow card, automatically create a red card
+        if existing_yellow_cards >= 1:  # They already had 1, now they have 2
+            # Commit the yellow card first so we can get its created_at time
+            db.commit()
+
+            # Create red card with a timestamp slightly after the yellow card
+            from datetime import datetime, timedelta
+            red_card_event = MatchEvent(
+                fixture_id=fixture_id,
+                player_id=event.player_id,
+                event_type="red_card",
+                minute=event.minute,
+                half=event.half,
+                extra_info="Second yellow card",
+                created_by=current_user.id
+            )
+            # Set the created_at to be slightly after the yellow card for proper ordering
+            red_card_event.created_at = datetime.utcnow() + timedelta(seconds=1)
+            db.add(red_card_event)
+
+            # Also remove player from lineup immediately
+            lineup_entry = db.query(Lineup).filter(
+                Lineup.fixture_id == fixture_id,
+                Lineup.player_id == event.player_id
+            ).first()
+            if lineup_entry:
+                db.delete(lineup_entry)
+
     # Special handling for red card: automatically remove player from lineup
     if event.event_type == "red_card":
         # Find the player's lineup entry for this fixture

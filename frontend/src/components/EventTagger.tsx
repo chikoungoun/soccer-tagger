@@ -537,14 +537,18 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                             <button
                               key={lineup.player.id}
                               onClick={() => handlePlayerSelect(lineup.player)}
-                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75"
+                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75 relative"
                             >
+                              {/* Prominent SENT OFF Banner */}
+                              <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 border-white">
+                                SENT OFF
+                              </div>
                               <div className="text-sm font-medium text-red-800 flex items-center">
                                 <XCircleIcon className="h-3 w-3 mr-1" />
                                 {lineup.player.name}
                               </div>
                               <div className="text-xs text-red-600">
-                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position} (SENT OFF)
+                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position}
                               </div>
                             </button>
                           ))}
@@ -638,14 +642,18 @@ const EventTagger: React.FC<EventTaggerProps> = ({
                             <button
                               key={lineup.player.id}
                               onClick={() => handlePlayerSelect(lineup.player)}
-                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75"
+                              className="p-2 text-left rounded border border-red-300 bg-red-100 hover:bg-red-200 transition-colors opacity-75 relative"
                             >
+                              {/* Prominent SENT OFF Banner */}
+                              <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 border-white">
+                                SENT OFF
+                              </div>
                               <div className="text-sm font-medium text-red-800 flex items-center">
                                 <XCircleIcon className="h-3 w-3 mr-1" />
                                 {lineup.player.name}
                               </div>
                               <div className="text-xs text-red-600">
-                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position} (SENT OFF)
+                                #{lineup.player.jersey_number} - {lineup.position_played || lineup.player.position}
                               </div>
                             </button>
                           ))}
