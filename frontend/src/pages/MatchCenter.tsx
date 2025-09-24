@@ -20,6 +20,7 @@ import EventTagger from '../components/EventTagger';
 import EventsList from '../components/EventsList';
 import EditEventModal from '../components/EditEventModal';
 import PlayerMinutes from '../components/PlayerMinutes';
+import FormationPitch from '../components/FormationPitch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -341,6 +342,13 @@ const MatchCenter: React.FC = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Formation Pitch */}
+      <FormationPitch
+        homeTeamLineup={currentHomeLineup || fixtureWithLineups?.home_lineup || null}
+        awayTeamLineup={currentAwayLineup || fixtureWithLineups?.away_lineup || null}
+        fixtureId={fixture.id}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Event Tagger */}

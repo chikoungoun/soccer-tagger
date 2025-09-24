@@ -133,6 +133,7 @@ export interface CreateLineupData {
 export interface TeamLineup {
   team_id: number;
   team: Team;
+  formation?: string;
   starters: LineupWithPlayer[];
   substitutes: LineupWithPlayer[];
 }
