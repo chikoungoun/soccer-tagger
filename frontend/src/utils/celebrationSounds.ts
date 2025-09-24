@@ -108,12 +108,19 @@ export class CelebrationSounds {
     CelebrationSounds.musicGainNode.connect(audioContext.destination);
     CelebrationSounds.musicGainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
 
-    // Triumphant melody pattern (looping)
+    // FF Victory-inspired melody (triumphant ascending fanfare)
     const melody = [
-      523.25, 659.25, 783.99, 1046.5, // C-E-G-C (major chord)
-      987.77, 880.00, 783.99, 659.25, // B-A-G-E (descending)
-      698.46, 783.99, 880.00, 1046.5, // F#-G-A-C (ascending)
-      1174.7, 1046.5, 880.00, 783.99  // D-C-A-G (heroic finish)
+      // Main fanfare phrase (ascending victory theme)
+      523.25, 523.25, 523.25, 659.25, // C-C-C-E (opening call)
+      783.99, 880.00, 1046.5, 1174.7, // G-A-C-D (ascending triumph)
+      1318.5, 1046.5, 880.00, 783.99, // E-C-A-G (heroic peak and descent)
+      659.25, 783.99, 1046.5, 1318.5, // E-G-C-E (final ascending victory)
+
+      // Repeat with variation (classic FF loop style)
+      1046.5, 1046.5, 1046.5, 1318.5, // C-C-C-E (higher octave)
+      1567.9, 1760.0, 2093.0, 2349.3, // G-A-C-D (soaring higher)
+      2637.0, 2093.0, 1760.0, 1567.9, // E-C-A-G (epic peak)
+      1318.5, 1567.9, 2093.0, 2637.0  // E-G-C-E (triumphant finale)
     ];
 
     let noteIndex = 0;
@@ -133,8 +140,8 @@ export class CelebrationSounds {
       noteIndex++;
     };
 
-    // Play notes in sequence
-    const musicInterval = setInterval(playNextNote, 500); // Play note every 500ms
+    // Play notes in FF victory fanfare rhythm
+    const musicInterval = setInterval(playNextNote, 350); // Faster, more triumphant pace
 
     // Stop music after duration
     setTimeout(() => {
