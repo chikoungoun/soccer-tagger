@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -16,8 +16,39 @@ import Events from './pages/Events';
 import Analytics from './pages/Analytics';
 import Users from './pages/Users';
 import Login from './pages/Login';
+import SoccerConfetti from './components/SoccerConfetti';
+import { useKonamiCode } from './hooks/useKonamiCode';
+import { CelebrationSounds, showEmojiCelebration } from './utils/celebrationSounds';
 
 function App() {
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // 🎮 KONAMI CODE EASTER EGG: ↑↑↓↓←→←→BA
+  const activateKonamiCode = () => {
+    console.log('🎉 SUPER TAGGER MODE ACTIVATED! ⚽');
+
+    // Show confetti
+    setShowConfetti(true);
+
+    // Play celebration sounds
+    try {
+      CelebrationSounds.playVictoryFanfare();
+      setTimeout(() => CelebrationSounds.playCrowdCheer(), 800);
+    } catch (error) {
+      // Fallback to emoji celebration if audio fails
+      showEmojiCelebration();
+    }
+
+    // Show console message
+    console.log('%c🏆 GOAL! You found the secret! 🏆', 'color: #4CAF50; font-size: 20px; font-weight: bold;');
+    console.log('%c⚽ You are now in SUPER TAGGER MODE! ⚽', 'color: #2196F3; font-size: 16px;');
+
+    // Add visual alert for testing
+    alert('🎉 KONAMI CODE ACTIVATED! ⚽ Check for falling soccer balls!');
+  };
+
+  useKonamiCode(activateKonamiCode);
+
   return (
     <ThemeProvider>
       <Router>
@@ -96,6 +127,13 @@ function App() {
             }
           />
           </Routes>
+
+          {/* 🎊 Soccer Ball Confetti Easter Egg */}
+          <SoccerConfetti
+            isActive={showConfetti}
+            onComplete={() => setShowConfetti(false)}
+          />
+
           </AnalyticsProvider>
         </AuthProvider>
       </Router>

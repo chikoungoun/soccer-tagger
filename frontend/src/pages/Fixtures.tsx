@@ -45,6 +45,9 @@ interface LineupStatus {
 const Fixtures: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+
+  // Check if user can edit fixtures (only super_admin)
+  const canEditFixtures = user?.role === 'super_admin';
   const [searchParams] = useSearchParams();
   const [fixtures, setFixtures] = useState<FixtureWithTeams[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -135,6 +138,14 @@ const Fixtures: React.FC = () => {
       setFixtures(filteredFixtures);
       setTeams(teamsData);
       setGameweeks(gameweeksData);
+
+      // For taggers, automatically set the active gameweek filter
+      if (user?.role === 'tagger') {
+        const activeGameweek = gameweeksData.find(gw => gw.is_active);
+        if (activeGameweek && !filters.gameweekId) {
+          setFilters(prev => ({ ...prev, gameweekId: activeGameweek.id.toString() }));
+        }
+      }
 
       // Fetch lineup statuses for filtered fixtures
       await fetchLineupStatuses(filteredFixtures);
@@ -354,17 +365,19 @@ const Fixtures: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <div className="mt-6 sm:mt-0">
-              <Button
-                onClick={() => setShowFixtureModal(true)}
-                size="lg"
-                className="bg-white text-green-600 hover:bg-gray-100 shadow-lg flex items-center"
-                disabled={teams.length < 2}
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Schedule Match
-              </Button>
-            </div>
+            {canEditFixtures && (
+              <div className="mt-6 sm:mt-0">
+                <Button
+                  onClick={() => setShowFixtureModal(true)}
+                  size="lg"
+                  className="bg-white text-green-600 hover:bg-gray-100 shadow-lg flex items-center"
+                  disabled={teams.length < 2}
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Schedule Match
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -432,19 +445,46 @@ const Fixtures: React.FC = () => {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Gameweek
+                {!canEditFixtures && (
+                  <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                    Active Only
+                  </span>
+                )}
               </label>
               <select
                 name="gameweekId"
                 value={filters.gameweekId}
                 onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                  !canEditFixtures
+                    ? 'border-blue-300 bg-blue-50 text-blue-800'
+                    : 'border-gray-300 bg-white'
+                }`}
+                disabled={!canEditFixtures}
               >
-                <option value="">All Gameweeks</option>
-                {gameweeks.map(gameweek => (
-                  <option key={gameweek.id} value={gameweek.id}>
-                    {gameweek.name}
-                  </option>
-                ))}
+                {canEditFixtures ? (
+                  <>
+                    <option value="">All Gameweeks</option>
+                    {gameweeks.map(gameweek => (
+                      <option key={gameweek.id} value={gameweek.id}>
+                        {gameweek.name}
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {gameweeks
+                      .filter(gameweek => gameweek.is_active)
+                      .map(gameweek => (
+                        <option key={gameweek.id} value={gameweek.id}>
+                          {gameweek.name} (Active)
+                        </option>
+                      ))}
+                    {gameweeks.filter(gameweek => gameweek.is_active).length === 0 && (
+                      <option value="">No active gameweek</option>
+                    )}
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -463,11 +503,13 @@ const Fixtures: React.FC = () => {
             </h3>
             <p className="text-gray-600 mb-8 max-w-sm mx-auto">
               {fixtures.length === 0
-                ? 'Schedule your first match to get started with live events'
+                ? canEditFixtures
+                  ? 'Schedule your first match to get started with live events'
+                  : 'No fixtures have been scheduled yet. Contact your administrator to schedule matches.'
                 : 'Try adjusting your filters to find fixtures'
               }
             </p>
-            {fixtures.length === 0 && teams.length >= 2 && (
+            {fixtures.length === 0 && teams.length >= 2 && canEditFixtures && (
               <Button
                 onClick={() => setShowFixtureModal(true)}
                 size="lg"
@@ -662,23 +704,27 @@ const Fixtures: React.FC = () => {
                         👥 Lineups
                       </Button>
 
-                      <Button
-                        onClick={() => openEditModal(fixture)}
-                        variant="ghost"
-                        size="sm"
-                        className="p-1.5"
-                      >
-                        <PencilIcon className="h-3 w-3" />
-                      </Button>
+                      {canEditFixtures && (
+                        <>
+                          <Button
+                            onClick={() => openEditModal(fixture)}
+                            variant="ghost"
+                            size="sm"
+                            className="p-1.5"
+                          >
+                            <PencilIcon className="h-3 w-3" />
+                          </Button>
 
-                      <Button
-                        onClick={() => handleDeleteFixture(fixture.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="p-1.5 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <TrashIcon className="h-3 w-3" />
-                      </Button>
+                          <Button
+                            onClick={() => handleDeleteFixture(fixture.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="p-1.5 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <TrashIcon className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
