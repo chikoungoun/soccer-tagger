@@ -313,7 +313,7 @@ const Fixtures: React.FC = () => {
       return (
         <div className="flex items-center">
           <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1" />
-          <span className="text-xs text-green-600 font-medium">Ready</span>
+          <span className="text-xs text-green-600 font-medium">Lineups are ready</span>
         </div>
       );
     } else if (homeStarterCount > 0 || awayStarterCount > 0) {
@@ -321,7 +321,7 @@ const Fixtures: React.FC = () => {
         <div className="flex items-center">
           <ExclamationCircleIcon className="h-4 w-4 text-yellow-500 mr-1" />
           <span className="text-xs text-yellow-600 font-medium">
-            {homeStarterCount}/11 - {awayStarterCount}/11
+            Lineups incomplete ({homeStarterCount}/11 - {awayStarterCount}/11)
           </span>
         </div>
       );
@@ -329,7 +329,7 @@ const Fixtures: React.FC = () => {
       return (
         <div className="flex items-center">
           <XCircleIcon className="h-4 w-4 text-red-500 mr-1" />
-          <span className="text-xs text-red-600 font-medium">Not Set</span>
+          <span className="text-xs text-red-600 font-medium">Lineups not set</span>
         </div>
       );
     }

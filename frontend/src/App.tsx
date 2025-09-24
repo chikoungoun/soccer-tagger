@@ -19,9 +19,31 @@ import Login from './pages/Login';
 import SoccerConfetti from './components/SoccerConfetti';
 import { useKonamiCode } from './hooks/useKonamiCode';
 import { CelebrationSounds, showEmojiCelebration } from './utils/celebrationSounds';
+import { useBouncingPicture, EASTER_EGG_CONFIGS } from './hooks/useBouncingPicture';
 
 function App() {
   const [showConfetti, setShowConfetti] = useState(false);
+  const { triggerBouncingPicture, BouncingPictureComponent } = useBouncingPicture();
+
+  // Force cleanup bouncing picture after 16 seconds (failsafe)
+  React.useEffect(() => {
+    let forceCleanupTimer: NodeJS.Timeout;
+
+    // Set a failsafe timer when confetti is activated
+    if (showConfetti) {
+      console.log('Setting failsafe cleanup timer for bouncing logo');
+      forceCleanupTimer = setTimeout(() => {
+        console.log('Failsafe: Force stopping bouncing logo');
+        window.location.reload(); // Nuclear option - refresh page
+      }, 16000);
+    }
+
+    return () => {
+      if (forceCleanupTimer) {
+        clearTimeout(forceCleanupTimer);
+      }
+    };
+  }, [showConfetti]);
 
   // 🎮 KONAMI CODE EASTER EGG: ↑↑↓↓←→←→BA
   const activateKonamiCode = () => {
@@ -30,10 +52,19 @@ function App() {
     // Show confetti
     setShowConfetti(true);
 
-    // Play celebration sounds
+    // Trigger bouncing soccer-tagger logo
+    triggerBouncingPicture({
+      imageUrl: '/soccer_tagger.png',
+      duration: 15000,
+      size: 240
+    });
+
+    // Play celebration sounds and background music
     try {
       CelebrationSounds.playVictoryFanfare();
       setTimeout(() => CelebrationSounds.playCrowdCheer(), 800);
+      // Start background music for 15 seconds (matches bouncing logo duration)
+      setTimeout(() => CelebrationSounds.playBackgroundMusic(15000), 1000);
     } catch (error) {
       // Fallback to emoji celebration if audio fails
       showEmojiCelebration();
@@ -44,7 +75,7 @@ function App() {
     console.log('%c⚽ You are now in SUPER TAGGER MODE! ⚽', 'color: #2196F3; font-size: 16px;');
 
     // Add visual alert for testing
-    alert('🎉 KONAMI CODE ACTIVATED! ⚽ Check for falling soccer balls!');
+    alert('🎉 KONAMI CODE ACTIVATED! ⚽ Check for falling soccer balls and bouncing Soccer Tagger logo!');
   };
 
   useKonamiCode(activateKonamiCode);
@@ -133,6 +164,9 @@ function App() {
             isActive={showConfetti}
             onComplete={() => setShowConfetti(false)}
           />
+
+          {/* ⚽ Bouncing Picture Easter Egg */}
+          {BouncingPictureComponent}
 
           </AnalyticsProvider>
         </AuthProvider>

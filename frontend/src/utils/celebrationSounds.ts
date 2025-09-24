@@ -15,6 +15,9 @@ export class CelebrationSounds {
     return CelebrationSounds.audioContext;
   }
 
+  private static currentBgMusic: AudioContext | null = null;
+  private static musicGainNode: GainNode | null = null;
+
   // Create and play a tone
   private static playTone(frequency: number, duration: number, volume: number = 0.1): void {
     const audioContext = CelebrationSounds.getAudioContext();
@@ -90,6 +93,65 @@ export class CelebrationSounds {
         CelebrationSounds.playTone(note.freq, note.duration, 0.12);
       }, index * 150);
     });
+  }
+
+  // Play background celebration music (triumphant theme)
+  public static playBackgroundMusic(duration: number = 15000): void {
+    const audioContext = CelebrationSounds.getAudioContext();
+    if (!audioContext) return;
+
+    // Stop any existing background music
+    CelebrationSounds.stopBackgroundMusic();
+
+    // Create gain node for volume control
+    CelebrationSounds.musicGainNode = audioContext.createGain();
+    CelebrationSounds.musicGainNode.connect(audioContext.destination);
+    CelebrationSounds.musicGainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+
+    // Triumphant melody pattern (looping)
+    const melody = [
+      523.25, 659.25, 783.99, 1046.5, // C-E-G-C (major chord)
+      987.77, 880.00, 783.99, 659.25, // B-A-G-E (descending)
+      698.46, 783.99, 880.00, 1046.5, // F#-G-A-C (ascending)
+      1174.7, 1046.5, 880.00, 783.99  // D-C-A-G (heroic finish)
+    ];
+
+    let noteIndex = 0;
+    const playNextNote = () => {
+      if (!CelebrationSounds.musicGainNode) return; // Stop if music was stopped
+
+      const frequency = melody[noteIndex % melody.length];
+      const oscillator = audioContext.createOscillator();
+
+      oscillator.connect(CelebrationSounds.musicGainNode);
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.type = 'triangle'; // Warmer sound for background music
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.4);
+
+      noteIndex++;
+    };
+
+    // Play notes in sequence
+    const musicInterval = setInterval(playNextNote, 500); // Play note every 500ms
+
+    // Stop music after duration
+    setTimeout(() => {
+      clearInterval(musicInterval);
+      CelebrationSounds.stopBackgroundMusic();
+    }, duration);
+  }
+
+  // Stop background music
+  public static stopBackgroundMusic(): void {
+    if (CelebrationSounds.musicGainNode) {
+      CelebrationSounds.musicGainNode.gain.exponentialRampToValueAtTime(0.001,
+        CelebrationSounds.audioContext!.currentTime + 0.5);
+      setTimeout(() => {
+        CelebrationSounds.musicGainNode = null;
+      }, 500);
+    }
   }
 }
 
