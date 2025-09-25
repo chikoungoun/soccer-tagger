@@ -56,7 +56,7 @@ export const playersApi = {
 
 // Fixtures API
 export const fixturesApi = {
-  getAll: (teamId?: number, status?: string, page: number = 1, per_page: number = 20): Promise<{
+  getAll: (teamId?: number, status?: string, page: number = 1, per_page: number = 20, gameweekId?: number): Promise<{
     fixtures: FixtureWithTeams[];
     total: number;
     page: number;
@@ -68,6 +68,7 @@ export const fixturesApi = {
     const params: any = { page, per_page };
     if (teamId) params.team_id = teamId;
     if (status) params.status = status;
+    if (gameweekId) params.gameweek_id = gameweekId;
     return api.get('/fixtures/', { params }).then(res => res.data);
   },
   getById: (id: number): Promise<FixtureWithTeams> => api.get(`/fixtures/${id}`).then(res => res.data),
@@ -151,4 +152,80 @@ export const dashboardApi = {
     };
     recent_fixtures: FixtureWithTeams[];
   }> => api.get('/dashboard/stats').then(res => res.data),
+};
+
+// Rewards API
+export const rewardsApi = {
+  getMatchRewards: (fixtureId: number): Promise<any[]> =>
+    api.get(`/rewards/match/${fixtureId}/rewards`).then(res => res.data),
+
+  getTaggerPerformance: (taggerId: number, fixtureId?: number): Promise<{
+    tagger_id: number;
+    matches_tagged: number;
+    total_earnings: number;
+    average_accuracy: number;
+    total_events_logged: number;
+    total_corrections: number;
+    matches?: any[];
+  }> => {
+    const params = fixtureId ? `?fixture_id=${fixtureId}` : '';
+    return api.get(`/rewards/tagger/${taggerId}/performance${params}`).then(res => res.data);
+  },
+
+  finalizeMatchRewards: (fixtureId: number): Promise<any> =>
+    api.post(`/rewards/match/${fixtureId}/finalize`).then(res => res.data),
+
+  getLeaderboard: (limit: number = 10): Promise<{
+    tagger_id: number;
+    username: string;
+    matches_tagged: number;
+    total_earnings: number;
+    average_accuracy: number;
+    total_events_logged: number;
+  }[]> => api.get(`/rewards/leaderboard?limit=${limit}`).then(res => res.data),
+
+  getRewardStats: (): Promise<{
+    total_rewards_paid: number;
+    total_matches_tagged: number;
+    average_accuracy: number;
+    total_corrections: number;
+    active_taggers: number;
+    average_reward_per_match: number;
+  }> => api.get('/rewards/stats').then(res => res.data),
+
+  getMatchEditLogs: (fixtureId: number): Promise<any[]> =>
+    api.get(`/rewards/match/${fixtureId}/edit-logs`).then(res => res.data),
+
+  getTaggerEditLogs: (taggerId: number): Promise<any[]> =>
+    api.get(`/rewards/tagger/${taggerId}/edit-logs`).then(res => res.data),
+
+  getTaggerMatchHistory: (taggerId: number): Promise<{
+    fixture_id: number;
+    fixture_date: string | null;
+    home_team: {
+      id: number;
+      name: string;
+      short_name: string;
+    };
+    away_team: {
+      id: number;
+      name: string;
+      short_name: string;
+    };
+    score: string;
+    status: string;
+    gameweek: number;
+    events_logged: number;
+    admin_corrections: number;
+    events_added_by_admin: number;
+    events_removed_by_admin: number;
+    accuracy_percentage: number;
+    base_reward: number;
+    price_per_event: number;
+    final_reward: number;
+    is_finalized: boolean;
+    finalized_at: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+  }[]> => api.get(`/rewards/tagger/${taggerId}/match-history`).then(res => res.data),
 };

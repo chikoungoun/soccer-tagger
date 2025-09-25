@@ -111,31 +111,73 @@ const Fixtures: React.FC = () => {
   const fetchLineupStatuses = async (fixtures: FixtureWithTeams[]) => {
     const statuses: LineupStatus = {};
 
-    for (const fixture of fixtures) {
-      try {
-        const fixtureWithLineups = await lineupsApi.getFixtureLineups(fixture.id);
-
-        const homeStarters = fixtureWithLineups.home_lineup?.starters?.length || 0;
-        const awayStarters = fixtureWithLineups.away_lineup?.starters?.length || 0;
-
-        statuses[fixture.id] = {
-          homeLineupReady: homeStarters === 11,
-          awayLineupReady: awayStarters === 11,
-          homeStarterCount: homeStarters,
-          awayStarterCount: awayStarters
-        };
-      } catch (error) {
-        // If lineup doesn't exist yet, set as not ready
+    // Skip lineup fetching for taggers to improve performance
+    // Taggers don't typically need lineup status information on the fixtures page
+    if (user?.role !== 'super_admin') {
+      // Set default empty statuses for taggers
+      fixtures.forEach(fixture => {
         statuses[fixture.id] = {
           homeLineupReady: false,
           awayLineupReady: false,
           homeStarterCount: 0,
           awayStarterCount: 0
         };
-      }
+      });
+      setLineupStatuses(statuses);
+      return;
     }
 
-    setLineupStatuses(statuses);
+    // For admins: Parallelize the requests to improve performance
+    const lineupPromises = fixtures.map(async (fixture) => {
+      try {
+        const fixtureWithLineups = await lineupsApi.getFixtureLineups(fixture.id);
+
+        const homeStarters = fixtureWithLineups.home_lineup?.starters?.length || 0;
+        const awayStarters = fixtureWithLineups.away_lineup?.starters?.length || 0;
+
+        return {
+          fixtureId: fixture.id,
+          status: {
+            homeLineupReady: homeStarters === 11,
+            awayLineupReady: awayStarters === 11,
+            homeStarterCount: homeStarters,
+            awayStarterCount: awayStarters
+          }
+        };
+      } catch (error) {
+        // If lineup doesn't exist yet, set as not ready
+        return {
+          fixtureId: fixture.id,
+          status: {
+            homeLineupReady: false,
+            awayLineupReady: false,
+            homeStarterCount: 0,
+            awayStarterCount: 0
+          }
+        };
+      }
+    });
+
+    // Execute all requests in parallel
+    try {
+      const results = await Promise.all(lineupPromises);
+      results.forEach(({ fixtureId, status }) => {
+        statuses[fixtureId] = status;
+      });
+      setLineupStatuses(statuses);
+    } catch (error) {
+      console.error('Error fetching lineup statuses:', error);
+      // Set fallback statuses
+      fixtures.forEach(fixture => {
+        statuses[fixture.id] = {
+          homeLineupReady: false,
+          awayLineupReady: false,
+          homeStarterCount: 0,
+          awayStarterCount: 0
+        };
+      });
+      setLineupStatuses(statuses);
+    }
   };
 
   const fetchData = useCallback(async (page: number = 1) => {
@@ -145,9 +187,10 @@ const Fixtures: React.FC = () => {
       // Prepare API parameters based on current filters
       const teamId = filters.teamId ? parseInt(filters.teamId) : undefined;
       const status = filters.status || undefined;
+      const gameweekId = filters.gameweekId ? parseInt(filters.gameweekId) : undefined;
 
       const promises = [
-        fixturesApi.getAll(teamId, status, page, itemsPerPage),
+        fixturesApi.getAll(teamId, status, page, itemsPerPage, gameweekId),
         teamsApi.getAll(),
         gameweeksApi.getAll()
       ];
@@ -184,7 +227,7 @@ const Fixtures: React.FC = () => {
         }
       }
 
-      // Fetch lineup statuses for the fetched fixtures
+      // Fetch lineup statuses (optimized: skipped for taggers, parallelized for admins)
       await fetchLineupStatuses(fixturesResponse.fixtures);
     } catch (error) {
       console.error('Error fetching data:', error);

@@ -7,6 +7,7 @@ from database import get_db
 from models import MatchEvent, MatchTimer, Player, Fixture, Lineup, User
 from pydantic import BaseModel
 from auth import get_current_active_user, require_tagger_or_admin
+from services.reward_service import RewardService
 
 router = APIRouter()
 
@@ -495,6 +496,21 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     old_event_type = event.event_type
     old_player_id = event.player_id
 
+    # Track changes for reward calculation
+    original_tagger_id = event.created_by
+    changes_made = []
+
+    if event.player_id != event_data.player_id:
+        changes_made.append(f"player_id: {event.player_id} → {event_data.player_id}")
+    if event.event_type != event_data.event_type:
+        changes_made.append(f"event_type: {event.event_type} → {event_data.event_type}")
+    if event.minute != event_data.minute:
+        changes_made.append(f"minute: {event.minute} → {event_data.minute}")
+    if event.half != event_data.half:
+        changes_made.append(f"half: {event.half} → {event_data.half}")
+    if event.extra_info != event_data.extra_info:
+        changes_made.append(f"extra_info: {event.extra_info} → {event_data.extra_info}")
+
     # Update event
     event.player_id = event_data.player_id
     event.event_type = event_data.event_type
@@ -545,6 +561,21 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     db.commit()
     db.refresh(event)
 
+    # Log the edit for reward tracking if changes were made by admin
+    if changes_made and original_tagger_id and current_user.role == "super_admin" and original_tagger_id != current_user.id:
+        reward_service = RewardService(db)
+        reward_service.log_event_edit(
+            event_id=event.id,
+            original_tagger_id=original_tagger_id,
+            editor_id=current_user.id,
+            edit_type="correction",
+            field_changed="multiple" if len(changes_made) > 1 else changes_made[0].split(":")[0] if changes_made else None,
+            old_value="; ".join(changes_made),
+            new_value="Event updated by admin",
+            correction_reason="Admin correction",
+            severity="minor"
+        )
+
     # Recalculate player minutes after event update
     calculate_player_minutes(event.fixture_id, db)
 
@@ -593,8 +624,25 @@ async def delete_event(event_id: int, db: Session = Depends(get_db), current_use
     # added back to the lineup if desired, as we don't store their original position
     # This prevents automatic re-addition that might be incorrect
 
-    # Store fixture_id before deleting event
+    # Store information before deleting event
     fixture_id = event.fixture_id
+    original_tagger_id = event.created_by
+    event_info = f"{event.event_type} by {player.name if player else 'Unknown'} at {event.minute}'"
+
+    # Log the deletion for reward tracking if deleted by admin
+    if original_tagger_id and current_user.role == "super_admin" and original_tagger_id != current_user.id:
+        reward_service = RewardService(db)
+        reward_service.log_event_edit(
+            event_id=event.id,
+            original_tagger_id=original_tagger_id,
+            editor_id=current_user.id,
+            edit_type="deletion",
+            field_changed="entire_event",
+            old_value=event_info,
+            new_value="DELETED",
+            correction_reason="Event deleted by admin",
+            severity="major"
+        )
 
     db.delete(event)
     db.commit()

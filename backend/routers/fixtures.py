@@ -17,6 +17,7 @@ def get_fixtures(
     per_page: int = 20,  # Reduced default from 100 to 20 for better performance
     team_id: int = None,
     status: str = None,
+    gameweek_id: int = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_tagger_or_admin)
 ):
@@ -46,6 +47,9 @@ def get_fixtures(
 
     if status:
         query = query.filter(Fixture.status == status)
+
+    if gameweek_id:
+        query = query.filter(Fixture.gameweek_id == gameweek_id)
 
     # Get total count for pagination
     total = query.count()

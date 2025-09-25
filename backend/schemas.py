@@ -132,7 +132,7 @@ class TeamWithPlayerCount(Team):
 class FixtureWithTeams(Fixture):
     home_team: Team
     away_team: Team
-    assigned_tagger: Optional[User] = None
+    assigned_tagger: Optional['User'] = None
 
 class GameweekBase(BaseModel):
     week_number: int
@@ -241,6 +241,60 @@ class MatchEvent(MatchEventBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     modified_by: Optional[int] = None
+
+    # Accuracy tracking fields
+    edit_count: int = 0
+    is_admin_corrected: bool = False
+    admin_correction_reason: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# Edit tracking schemas
+class EventEditLogBase(BaseModel):
+    event_id: int
+    original_tagger_id: int
+    editor_id: int
+    edit_type: str  # correction, enhancement, deletion, addition
+    field_changed: Optional[str] = None
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    correction_reason: Optional[str] = None
+    severity: str = "minor"  # minor, major, critical
+
+class EventEditLogCreate(EventEditLogBase):
+    pass
+
+class EventEditLog(EventEditLogBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Reward tracking schemas
+class MatchRewardBase(BaseModel):
+    fixture_id: int
+    tagger_id: int
+    base_reward: float = 50.0
+
+class MatchRewardCreate(MatchRewardBase):
+    pass
+
+class MatchReward(MatchRewardBase):
+    id: int
+    events_logged: int = 0
+    admin_corrections: int = 0
+    events_added_by_admin: int = 0
+    events_removed_by_admin: int = 0
+    price_per_event: float
+    accuracy_percentage: float
+    final_reward: float
+    is_finalized: bool = False
+    paid_out: bool = False
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    finalized_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

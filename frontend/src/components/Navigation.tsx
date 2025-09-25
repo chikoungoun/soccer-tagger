@@ -14,7 +14,8 @@ import {
   Bars3Icon,
   XMarkIcon,
   SparklesIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +68,12 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       name: t('navigation.fixtures'),
       href: '/fixtures',
       icon: CalendarDaysIcon,
+      allowedRoles: ['super_admin', 'tagger']
+    },
+    {
+      name: 'Rewards',
+      href: '/rewards',
+      icon: CurrencyDollarIcon,
       allowedRoles: ['super_admin', 'tagger']
     },
     {

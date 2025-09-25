@@ -10,9 +10,10 @@ import {
   ClockIcon,
   ArrowUpIcon,
   ArrowRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
-import { dashboardApi } from '../utils/api';
+import { dashboardApi, rewardsApi } from '../utils/api';
 import { Team, Player, FixtureWithTeams } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +30,8 @@ const Dashboard: React.FC = () => {
     liveMatches: 0
   });
   const [recentFixtures, setRecentFixtures] = useState<FixtureWithTeams[]>([]);
+  const [rewardStats, setRewardStats] = useState<any>(null);
+  const [userPerformance, setUserPerformance] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +50,31 @@ const Dashboard: React.FC = () => {
         });
 
         setRecentFixtures(dashboardData.recent_fixtures);
+
+        // Fetch reward data if user is authenticated
+        if (user) {
+          try {
+            // Get system reward stats for admins
+            if (user.role === 'super_admin') {
+              const rewards = await rewardsApi.getRewardStats();
+              setRewardStats(rewards);
+            }
+
+            // Get user's performance data
+            if (user.id) {
+              try {
+                const performance = await rewardsApi.getTaggerPerformance(user.id);
+                setUserPerformance(performance);
+              } catch (perfError) {
+                // User might not have tagged any matches yet
+                console.log('No performance data available');
+              }
+            }
+          } catch (rewardError) {
+            console.log('Could not fetch reward data:', rewardError);
+          }
+        }
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
 
@@ -281,6 +309,116 @@ const Dashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Rewards Summary */}
+      {(rewardStats || userPerformance) && (
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-green-100/30">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl text-gray-900 flex items-center space-x-2">
+                  <CurrencyDollarIcon className="h-6 w-6 text-green-600" />
+                  <span>Rewards Overview</span>
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  {user?.role === 'super_admin'
+                    ? 'System reward statistics and your performance'
+                    : 'Your tagging performance and earnings'
+                  }
+                </CardDescription>
+              </div>
+              <Button asChild variant="default" className="shadow-md bg-green-600 hover:bg-green-700">
+                <Link to="/rewards">
+                  <span>View Details</span>
+                  <ArrowRightIcon className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* User Performance */}
+              {userPerformance && (
+                <>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CurrencyDollarIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${userPerformance.total_earnings.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-600">Your Earnings</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <TrophyIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {userPerformance.average_accuracy.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-gray-600">Accuracy</p>
+                  </div>
+                </>
+              )}
+
+              {/* System Stats (Admin Only) */}
+              {user?.role === 'super_admin' && rewardStats && (
+                <>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CurrencyDollarIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${rewardStats.total_rewards_paid.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-gray-600">Total Paid</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <UsersIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {rewardStats.active_taggers}
+                    </p>
+                    <p className="text-xs text-gray-600">Active Taggers</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Performance Tips */}
+            {userPerformance && userPerformance.average_accuracy < 90 && (
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <SparklesIcon className="h-5 w-5 text-yellow-600" />
+                  <span className="font-medium text-yellow-800">
+                    Improve your accuracy to earn more rewards!
+                  </span>
+                </div>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Target 95%+ accuracy for maximum earnings. Each mistake reduces your match reward.
+                </p>
+              </div>
+            )}
+
+            {userPerformance && userPerformance.average_accuracy >= 95 && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <TrophyIcon className="h-5 w-5 text-green-600" />
+                  <span className="font-medium text-green-800">
+                    Excellent accuracy! Keep up the great work!
+                  </span>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                  You're earning maximum rewards with {userPerformance.average_accuracy.toFixed(1)}% accuracy.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <div>

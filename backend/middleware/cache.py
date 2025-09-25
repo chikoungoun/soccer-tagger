@@ -112,6 +112,7 @@ class CacheMiddleware(BaseHTTPMiddleware):
             '/api/teams': 600,      # Cache teams for 10 minutes
             '/api/players': 600,    # Cache players for 10 minutes
             '/api/gameweeks': 300,  # Cache gameweeks for 5 minutes
+            '/api/fixtures': 120,   # Cache fixtures for 2 minutes
             '/api/users': 180,      # Cache users for 3 minutes
         }
 

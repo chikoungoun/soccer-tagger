@@ -134,6 +134,11 @@ class MatchEvent(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())  # When event was last updated
     modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who last modified the event
 
+    # Accuracy tracking fields
+    edit_count = Column(Integer, default=0, nullable=False)  # Number of times this event has been edited
+    is_admin_corrected = Column(Boolean, default=False, nullable=False)  # True if admin has corrected this event
+    admin_correction_reason = Column(String(255), nullable=True)  # Reason for admin correction
+
     # Relationships
     fixture = relationship("Fixture")
     player = relationship("Player")
@@ -246,3 +251,62 @@ class Notification(Base):
     user = relationship("User")
     fixture = relationship("Fixture")
     gameweek = relationship("Gameweek")
+
+class EventEditLog(Base):
+    """Tracks all edits made to match events for accuracy measurement"""
+    __tablename__ = "event_edit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("match_events.id"), nullable=False)
+    original_tagger_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Who originally created the event
+    editor_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Who made the edit
+    edit_type = Column(String(50), nullable=False)  # correction, enhancement, deletion, addition
+
+    # Track what was changed
+    field_changed = Column(String(100), nullable=True)  # player_id, event_type, minute, etc.
+    old_value = Column(Text, nullable=True)  # Previous value (JSON if complex)
+    new_value = Column(Text, nullable=True)  # New value (JSON if complex)
+
+    # Admin feedback
+    correction_reason = Column(Text, nullable=True)  # Why was this corrected?
+    severity = Column(String(20), default="minor")  # minor, major, critical
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    event = relationship("MatchEvent")
+    original_tagger = relationship("User", foreign_keys=[original_tagger_id])
+    editor = relationship("User", foreign_keys=[editor_id])
+
+class MatchReward(Base):
+    """Tracks tagger rewards per match"""
+    __tablename__ = "match_rewards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"), nullable=False)
+    tagger_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    # Event statistics
+    events_logged = Column(Integer, default=0, nullable=False)  # Total events logged by tagger
+    admin_corrections = Column(Integer, default=0, nullable=False)  # Number of events corrected by admin
+    events_added_by_admin = Column(Integer, default=0, nullable=False)  # Events admin had to add
+    events_removed_by_admin = Column(Integer, default=0, nullable=False)  # Events admin had to remove
+
+    # Reward calculation
+    base_reward = Column(Float, default=50.0, nullable=False)  # Base reward amount ($50)
+    price_per_event = Column(Float, nullable=False)  # Calculated: base_reward / events_logged
+    accuracy_percentage = Column(Float, nullable=False)  # Calculated accuracy (0-100)
+    final_reward = Column(Float, nullable=False)  # Final calculated reward
+
+    # Status
+    is_finalized = Column(Boolean, default=False)  # True when match is completed and reward is final
+    paid_out = Column(Boolean, default=False)  # True when reward has been paid
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    finalized_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    fixture = relationship("Fixture")
+    tagger = relationship("User")

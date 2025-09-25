@@ -15,6 +15,7 @@ import MatchCenter from './pages/MatchCenter';
 import Events from './pages/Events';
 import Analytics from './pages/Analytics';
 import Users from './pages/Users';
+import Rewards from './pages/Rewards';
 import Login from './pages/Login';
 import SoccerConfetti from './components/SoccerConfetti';
 import { useKonamiCode } from './hooks/useKonamiCode';
@@ -151,6 +152,7 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/rewards" element={<Rewards />} />
                     <Route path="/match/:id" element={<MatchCenter />} />
                   </Routes>
                 </Navigation>

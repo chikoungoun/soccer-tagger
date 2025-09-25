@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
-from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth, dashboard
+from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth, dashboard, rewards
 from middleware.security import SecurityHeadersMiddleware
 from middleware.cache import CacheMiddleware, get_cache_stats
 import os
@@ -69,6 +69,7 @@ app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
+app.include_router(rewards.router, prefix="/api/rewards", tags=["rewards"])
 
 @app.get("/")
 async def root():
