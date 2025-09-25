@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -138,7 +138,7 @@ const Fixtures: React.FC = () => {
     setLineupStatuses(statuses);
   };
 
-  const fetchData = async (page: number = 1) => {
+  const fetchData = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
 
@@ -191,7 +191,7 @@ const Fixtures: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, canEditFixtures, user?.role, itemsPerPage]);
 
   const handleCreateFixture = async (fixtureData: CreateFixtureData) => {
     try {
@@ -313,21 +313,23 @@ const Fixtures: React.FC = () => {
     }
   };
 
-  // Apply client-side gameweek filtering (since it's not handled by the API)
-  const filteredFixtures = fixtures.filter(fixture => {
-    if (filters.gameweekId) {
-      const gameweekId = parseInt(filters.gameweekId);
-      if (fixture.gameweek_id !== gameweekId) {
-        return false;
+  // Apply client-side gameweek filtering (since it's not handled by the API) - Memoized for performance
+  const filteredFixtures = useMemo(() => {
+    return fixtures.filter(fixture => {
+      if (filters.gameweekId) {
+        const gameweekId = parseInt(filters.gameweekId);
+        if (fixture.gameweek_id !== gameweekId) {
+          return false;
+        }
       }
-    }
-    return true;
-  });
+      return true;
+    });
+  }, [fixtures, filters.gameweekId]);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -976,4 +978,4 @@ const Fixtures: React.FC = () => {
   );
 };
 
-export default Fixtures;
+export default React.memo(Fixtures);

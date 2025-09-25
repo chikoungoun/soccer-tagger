@@ -2,6 +2,28 @@ from pydantic import BaseModel
 from datetime import datetime, date
 from typing import List, Optional
 
+# User schemas (defined early for forward references)
+class UserBase(BaseModel):
+    username: str
+    email: str
+    role: str = "tagger"
+    is_active: bool = True
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 class TeamBase(BaseModel):
     name: str
     team_code_name: str
@@ -106,28 +128,6 @@ class TeamWithPlayers(Team):
 
 class TeamWithPlayerCount(Team):
     player_count: int = 0
-
-# User schemas (defined early for forward references)
-class UserBase(BaseModel):
-    username: str
-    email: str
-    role: str = "tagger"
-    is_active: bool = True
-
-class UserCreate(UserBase):
-    password: str
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        from_attributes = True
 
 class FixtureWithTeams(Fixture):
     home_team: Team

@@ -139,3 +139,16 @@ export const eventsApi = {
   deleteEvent: (eventId: number): Promise<void> => api.delete(`/events/events/${eventId}`).then(res => res.data),
   getPlayerMinutes: (fixtureId: number): Promise<any[]> => api.get(`/events/fixtures/${fixtureId}/player-minutes`).then(res => res.data),
 };
+
+// Dashboard API
+export const dashboardApi = {
+  getStats: (): Promise<{
+    stats: {
+      total_teams: number;
+      total_players: number;
+      total_fixtures: number;
+      live_matches: number;
+    };
+    recent_fixtures: FixtureWithTeams[];
+  }> => api.get('/dashboard/stats').then(res => res.data),
+};

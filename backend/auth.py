@@ -102,6 +102,23 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+async def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
+    """Get the current user if authenticated, or None if not authenticated"""
+    try:
+        token = request.cookies.get("access_token")
+        if not token:
+            return None
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+
+        user = db.query(User).filter(User.username == username).first()
+        return user
+    except (JWTError, Exception):
+        return None
+
 def require_role(required_role: str):
     """Dependency factory for role-based access control"""
     def role_checker(current_user: User = Depends(get_current_active_user)):

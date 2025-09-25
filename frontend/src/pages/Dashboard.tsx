@@ -12,7 +12,7 @@ import {
   ArrowRightIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
-import { teamsApi, playersApi, fixturesApi } from '../utils/api';
+import { dashboardApi } from '../utils/api';
 import { Team, Player, FixtureWithTeams } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,39 +36,28 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
 
-        // Always fetch teams and players (no authentication required)
-        let teams: Team[] = [];
-        let players: Player[] = [];
-        try {
-          [teams, players] = await Promise.all([
-            teamsApi.getAll(),
-            playersApi.getAll()
-          ]);
-        } catch (error) {
-          console.warn('Could not fetch teams/players:', error);
-        }
-
-        // Try to fetch fixtures (requires authentication)
-        let fixturesData: FixtureWithTeams[] = [];
-        if (isAuthenticated) {
-          try {
-            const fixturesResponse = await fixturesApi.getAll(undefined, undefined, 1, 100); // Get first 100 fixtures
-            fixturesData = fixturesResponse.fixtures;
-          } catch (error) {
-            console.warn('Could not fetch fixtures:', error);
-          }
-        }
+        // Use optimized dashboard API endpoint
+        const dashboardData = await dashboardApi.getStats();
 
         setStats({
-          totalTeams: teams.length,
-          totalPlayers: players.length,
-          totalFixtures: isAuthenticated ? fixturesData.length : 0,
-          liveMatches: isAuthenticated ? fixturesData.filter(f => f.status === 'live').length : 0
+          totalTeams: dashboardData.stats.total_teams,
+          totalPlayers: dashboardData.stats.total_players,
+          totalFixtures: dashboardData.stats.total_fixtures,
+          liveMatches: dashboardData.stats.live_matches
         });
 
-        setRecentFixtures(fixturesData.slice(0, 5));
+        setRecentFixtures(dashboardData.recent_fixtures);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+
+        // Fallback: set zero stats if API fails
+        setStats({
+          totalTeams: 0,
+          totalPlayers: 0,
+          totalFixtures: 0,
+          liveMatches: 0
+        });
+        setRecentFixtures([]);
       } finally {
         setLoading(false);
       }

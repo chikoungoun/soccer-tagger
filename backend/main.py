@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
-from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth
+from routers import teams, players, fixtures, gameweeks, lineups, uploads, events, auth, dashboard
 from middleware.security import SecurityHeadersMiddleware
+from middleware.cache import CacheMiddleware, get_cache_stats
 import os
 from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -34,6 +36,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Add security headers middleware (should be early in the chain)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Add caching middleware (before CORS for better performance)
+app.add_middleware(CacheMiddleware, cache_ttl_seconds=300)
+
+# Add compression middleware (responses > 500 bytes will be compressed)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # Get CORS origins from environment or use secure defaults
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 
@@ -60,6 +68,7 @@ app.include_router(lineups.router, prefix="/api/lineups", tags=["lineups"])
 app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 
 @app.get("/")
 async def root():
@@ -68,3 +77,8 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/cache-stats")
+async def cache_stats():
+    """Get cache statistics for monitoring."""
+    return get_cache_stats()
