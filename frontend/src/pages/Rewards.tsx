@@ -20,6 +20,7 @@ const Rewards: React.FC = () => {
   const { user } = useAuth();
   const [rewardStats, setRewardStats] = useState<any>(null);
   const [userPerformance, setUserPerformance] = useState<any>(null);
+  const [allUsersPerformance, setAllUsersPerformance] = useState<any[]>([]);
   const [matchHistory, setMatchHistory] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,10 +37,18 @@ const Rewards: React.FC = () => {
 
           const leaderboardData = await rewardsApi.getLeaderboard(20);
           setLeaderboard(leaderboardData);
+
+          // Fetch all users performance for admin view
+          try {
+            const allUsers = await rewardsApi.getAllUsersPerformance();
+            setAllUsersPerformance(allUsers);
+          } catch (error) {
+            console.log('Error fetching all users performance:', error);
+          }
         }
 
-        // Fetch user's own performance (if they're a tagger or admin viewing their own)
-        if (user?.id) {
+        // Fetch user's own performance (for taggers only, not admins)
+        if (user?.id && user?.role === 'tagger') {
           try {
             console.log('Fetching performance for user:', user.id);
             const performance = await rewardsApi.getTaggerPerformance(user.id);
@@ -107,8 +116,103 @@ const Rewards: React.FC = () => {
         </div>
       </div>
 
-      {/* User Performance (Personal Dashboard) */}
-      {userPerformance && (
+      {/* All Users Performance (Admin View) */}
+      {user?.role === 'super_admin' && allUsersPerformance.length > 0 && (
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-indigo-50 to-indigo-100/30">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl text-gray-900 flex items-center space-x-2">
+              <UserGroupIcon className="h-6 w-6 text-indigo-600" />
+              <span>All Taggers Performance</span>
+            </CardTitle>
+            <CardDescription>Aggregated performance data for all taggers in the system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left p-3 font-semibold text-gray-700">Tagger</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">Matches</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">Events</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">Accuracy</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">Corrections</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">Total Earnings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsersPerformance.map((tagger) => (
+                    <tr key={tagger.tagger_id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {tagger.username.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-900">{tagger.username}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-right font-medium">{tagger.matches_tagged}</td>
+                      <td className="p-3 text-right font-medium">{tagger.total_events_logged}</td>
+                      <td className="p-3 text-right">
+                        <Badge
+                          variant={tagger.average_accuracy >= 95 ? 'default' :
+                                   tagger.average_accuracy >= 85 ? 'secondary' : 'destructive'}
+                          className="font-medium"
+                        >
+                          {formatAccuracy(tagger.average_accuracy)}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-right">
+                        <span className={`font-medium ${tagger.total_corrections > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                          {tagger.total_corrections}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right font-bold text-green-600">
+                        {formatCurrency(tagger.total_earnings)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {allUsersPerformance.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Active Taggers</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {allUsersPerformance.reduce((sum, tagger) => sum + tagger.matches_tagged, 0)}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Matches</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(allUsersPerformance.reduce((sum, tagger) => sum + tagger.total_earnings, 0))}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Paid</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatAccuracy(allUsersPerformance.length > 0 ?
+                      allUsersPerformance.reduce((sum, tagger) => sum + tagger.average_accuracy, 0) / allUsersPerformance.length : 0)}
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Accuracy</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Performance (Personal Dashboard for Taggers) */}
+      {userPerformance && user?.role === 'tagger' && (
         <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100/30">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl text-gray-900 flex items-center space-x-2">
@@ -178,7 +282,7 @@ const Rewards: React.FC = () => {
       )}
 
       {/* Match History (Tagger View) */}
-      {userPerformance && matchHistory.length > 0 && (
+      {userPerformance && matchHistory.length > 0 && user?.role === 'tagger' && (
         <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-green-100/30">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl text-gray-900 flex items-center space-x-2">
@@ -386,7 +490,7 @@ const Rewards: React.FC = () => {
       )}
 
       {/* No Data State */}
-      {!userPerformance && !rewardStats && leaderboard.length === 0 && (
+      {!userPerformance && !rewardStats && leaderboard.length === 0 && allUsersPerformance.length === 0 && (
         <Card className="text-center p-12">
           <UserGroupIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Data Available</h3>

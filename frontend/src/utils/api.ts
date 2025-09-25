@@ -228,4 +228,14 @@ export const rewardsApi = {
     created_at: string | null;
     updated_at: string | null;
   }[]> => api.get(`/rewards/tagger/${taggerId}/match-history`).then(res => res.data),
+
+  getAllUsersPerformance: (): Promise<{
+    tagger_id: number;
+    username: string;
+    matches_tagged: number;
+    total_earnings: number;
+    average_accuracy: number;
+    total_events_logged: number;
+    total_corrections: number;
+  }[]> => api.get('/rewards/all-users-performance').then(res => res.data),
 };

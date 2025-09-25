@@ -223,3 +223,39 @@ async def get_reward_stats(
         'active_taggers': active_taggers,
         'average_reward_per_match': float(total_rewards_paid / total_matches_tagged) if total_matches_tagged > 0 else 0
     }
+
+@router.get("/all-users-performance")
+async def get_all_users_performance(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Get performance summary for all users (admin only)"""
+    from sqlalchemy import func
+
+    # Get all users with their performance data
+    users_performance = db.query(
+        MatchReward.tagger_id,
+        User.username,
+        func.count(MatchReward.id).label('matches_tagged'),
+        func.sum(MatchReward.final_reward).label('total_earnings'),
+        func.avg(MatchReward.accuracy_percentage).label('average_accuracy'),
+        func.sum(MatchReward.events_logged).label('total_events_logged'),
+        func.sum(MatchReward.admin_corrections + MatchReward.events_added_by_admin + MatchReward.events_removed_by_admin).label('total_corrections')
+    ).join(User, MatchReward.tagger_id == User.id)\
+    .filter(MatchReward.is_finalized == True)\
+    .group_by(MatchReward.tagger_id, User.username)\
+    .order_by(func.avg(MatchReward.accuracy_percentage).desc())\
+    .all()
+
+    return [
+        {
+            'tagger_id': row.tagger_id,
+            'username': row.username,
+            'matches_tagged': row.matches_tagged,
+            'total_earnings': float(row.total_earnings or 0),
+            'average_accuracy': float(row.average_accuracy or 0),
+            'total_events_logged': row.total_events_logged or 0,
+            'total_corrections': row.total_corrections or 0
+        }
+        for row in users_performance
+    ]

@@ -71,16 +71,16 @@ const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       allowedRoles: ['super_admin', 'tagger']
     },
     {
-      name: 'Rewards',
-      href: '/rewards',
-      icon: CurrencyDollarIcon,
-      allowedRoles: ['super_admin', 'tagger']
-    },
-    {
       name: t('navigation.events'),
       href: '/events',
       icon: ChartBarIcon,
       allowedRoles: ['super_admin']
+    },
+    {
+      name: 'Rewards',
+      href: '/rewards',
+      icon: CurrencyDollarIcon,
+      allowedRoles: ['super_admin', 'tagger']
     },
     {
       name: t('navigation.analytics'),
