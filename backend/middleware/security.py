@@ -39,8 +39,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Enable XSS protection (legacy browsers)
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
-        # Basic Content Security Policy
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        # Basic Content Security Policy - Allow CDN for Swagger UI
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net"
 
         # Control referrer information
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"

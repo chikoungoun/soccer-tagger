@@ -29,6 +29,7 @@ class Team(TeamBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    modified_by: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -62,6 +63,7 @@ class Player(PlayerBase):
     team_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    modified_by: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -94,6 +96,7 @@ class Fixture(FixtureBase):
     assigned_tagger_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    modified_by: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -198,3 +201,46 @@ class TeamLineup(BaseModel):
 class FixtureWithLineups(FixtureWithTeams):
     home_lineup: Optional[TeamLineup] = None
     away_lineup: Optional[TeamLineup] = None
+
+# Pagination schemas
+class PaginatedResponse(BaseModel):
+    """Base pagination response model"""
+    total: int
+    page: int
+    per_page: int
+    pages: int
+    has_next: bool
+    has_prev: bool
+
+class PaginatedFixtures(PaginatedResponse):
+    """Paginated fixtures response"""
+    fixtures: List[FixtureWithTeams] = []
+
+# MatchEvent schemas
+class MatchEventBase(BaseModel):
+    fixture_id: int
+    player_id: int
+    event_type: str  # goal, assist, yellow_card, red_card, substitution_in, substitution_out, penalty_miss, penalty_saved
+    minute: int
+    half: int  # 1 for first half, 2 for second half
+    extra_info: Optional[str] = None
+
+class MatchEventCreate(MatchEventBase):
+    pass
+
+class MatchEventUpdate(BaseModel):
+    player_id: Optional[int] = None
+    event_type: Optional[str] = None
+    minute: Optional[int] = None
+    half: Optional[int] = None
+    extra_info: Optional[str] = None
+
+class MatchEvent(MatchEventBase):
+    id: int
+    created_by: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    modified_by: Optional[int] = None
+
+    class Config:
+        from_attributes = True

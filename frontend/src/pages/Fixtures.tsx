@@ -54,6 +54,14 @@ const Fixtures: React.FC = () => {
   const [gameweeks, setGameweeks] = useState<Gameweek[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const itemsPerPage = 20;
   const [showFixtureModal, setShowFixtureModal] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showLineupModal, setShowLineupModal] = useState(false);
@@ -68,8 +76,8 @@ const Fixtures: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
+    fetchData(currentPage);
+  }, [user, currentPage]);
 
   useEffect(() => {
     // Initialize filters from URL parameters
@@ -90,6 +98,15 @@ const Fixtures: React.FC = () => {
       setShowFixtureModal(true);
     }
   }, [searchParams]);
+
+  // Reset to page 1 when filters change and refetch
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchData(1);
+    }
+  }, [filters]);
 
   const fetchLineupStatuses = async (fixtures: FixtureWithTeams[]) => {
     const statuses: LineupStatus = {};
@@ -121,10 +138,16 @@ const Fixtures: React.FC = () => {
     setLineupStatuses(statuses);
   };
 
-  const fetchData = async () => {
+  const fetchData = async (page: number = 1) => {
     try {
+      setLoading(true);
+
+      // Prepare API parameters based on current filters
+      const teamId = filters.teamId ? parseInt(filters.teamId) : undefined;
+      const status = filters.status || undefined;
+
       const promises = [
-        fixturesApi.getAll(),
+        fixturesApi.getAll(teamId, status, page, itemsPerPage),
         teamsApi.getAll(),
         gameweeksApi.getAll()
       ];
@@ -135,22 +158,16 @@ const Fixtures: React.FC = () => {
       }
 
       const results = await Promise.all(promises);
-      const [fixturesData, teamsData, gameweeksData, usersData] = results;
+      const [fixturesResponse, teamsData, gameweeksData, usersData] = results;
 
-      // Filter fixtures based on user role
-      let filteredFixtures = fixturesData;
-      if (user?.role === 'tagger') {
-        // For taggers, only show fixtures from active gameweeks
-        const activeGameweekIds = gameweeksData
-          .filter(gw => gw.is_active)
-          .map(gw => gw.id);
+      // Update pagination state
+      setFixtures(fixturesResponse.fixtures);
+      setCurrentPage(fixturesResponse.page);
+      setTotalPages(fixturesResponse.pages);
+      setTotalCount(fixturesResponse.total);
+      setHasNextPage(fixturesResponse.has_next);
+      setHasPrevPage(fixturesResponse.has_prev);
 
-        filteredFixtures = fixturesData.filter(fixture =>
-          fixture.gameweek_id && activeGameweekIds.includes(fixture.gameweek_id)
-        );
-      }
-
-      setFixtures(filteredFixtures);
       setTeams(teamsData);
       setGameweeks(gameweeksData);
 
@@ -167,8 +184,8 @@ const Fixtures: React.FC = () => {
         }
       }
 
-      // Fetch lineup statuses for filtered fixtures
-      await fetchLineupStatuses(filteredFixtures);
+      // Fetch lineup statuses for the fetched fixtures
+      await fetchLineupStatuses(fixturesResponse.fixtures);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -179,7 +196,8 @@ const Fixtures: React.FC = () => {
   const handleCreateFixture = async (fixtureData: CreateFixtureData) => {
     try {
       await fixturesApi.create(fixtureData);
-      fetchData();
+      setCurrentPage(1);
+      fetchData(1);
       setShowFixtureModal(false);
     } catch (error) {
       console.error('Error creating fixture:', error);
@@ -191,7 +209,7 @@ const Fixtures: React.FC = () => {
 
     try {
       await fixturesApi.update(editingFixture.id, fixtureData);
-      fetchData();
+      fetchData(currentPage);
       setShowFixtureModal(false);
       setEditingFixture(null);
     } catch (error) {
@@ -206,7 +224,13 @@ const Fixtures: React.FC = () => {
 
     try {
       await fixturesApi.delete(fixtureId);
-      fetchData();
+      // If we're on the last page and delete the last item, go to previous page
+      if (fixtures.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+        fetchData(currentPage - 1);
+      } else {
+        fetchData(currentPage);
+      }
     } catch (error) {
       console.error('Error deleting fixture:', error);
     }
@@ -219,7 +243,7 @@ const Fixtures: React.FC = () => {
       console.log('Updating score:', { fixtureId: scoringFixture.id, homeScore, awayScore });
       const result = await fixturesApi.updateScore(scoringFixture.id, homeScore, awayScore);
       console.log('Score update result:', result);
-      fetchData();
+      fetchData(currentPage);
       setShowScoreModal(false);
       setScoringFixture(null);
     } catch (error: any) {
@@ -232,7 +256,7 @@ const Fixtures: React.FC = () => {
   const handleCompleteFixture = async (fixtureId: number) => {
     try {
       await fixturesApi.complete(fixtureId);
-      fetchData();
+      fetchData(currentPage);
     } catch (error) {
       console.error('Error completing fixture:', error);
     }
@@ -241,7 +265,7 @@ const Fixtures: React.FC = () => {
   const handleAssignTagger = async (fixtureId: number, taggerId?: number) => {
     try {
       await fixturesApi.assignTagger(fixtureId, taggerId);
-      fetchData(); // Refresh to show updated assignment
+      fetchData(currentPage); // Refresh to show updated assignment
     } catch (error) {
       console.error('Error assigning tagger:', error);
     }
@@ -289,16 +313,8 @@ const Fixtures: React.FC = () => {
     }
   };
 
+  // Apply client-side gameweek filtering (since it's not handled by the API)
   const filteredFixtures = fixtures.filter(fixture => {
-    if (filters.status && fixture.status !== filters.status) {
-      return false;
-    }
-    if (filters.teamId) {
-      const teamId = parseInt(filters.teamId);
-      if (fixture.home_team_id !== teamId && fixture.away_team_id !== teamId) {
-        return false;
-      }
-    }
     if (filters.gameweekId) {
       const gameweekId = parseInt(filters.gameweekId);
       if (fixture.gameweek_id !== gameweekId) {
@@ -841,6 +857,91 @@ const Fixtures: React.FC = () => {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+              {/* Pagination Info */}
+              <div className="text-sm text-gray-600">
+                Showing page {currentPage} of {totalPages} ({totalCount} total fixtures)
+              </div>
+
+              {/* Pagination Buttons */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                >
+                  First
+                </Button>
+
+                <Button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={!hasPrevPage}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronRightIcon className="h-4 w-4 rotate-180" />
+                  Previous
+                </Button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-10 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={!hasNextPage}
+                  variant="outline"
+                  size="sm"
+                >
+                  Next
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Fixture Modal */}
       <FixtureModal
         fixture={editingFixture}
@@ -866,7 +967,7 @@ const Fixtures: React.FC = () => {
         <LineupModal
           fixture={lineupFixture}
           onSave={async () => {
-            await fetchData(); // This will refresh both fixtures and lineup statuses
+            await fetchData(currentPage); // This will refresh both fixtures and lineup statuses
           }}
           onClose={closeModals}
         />

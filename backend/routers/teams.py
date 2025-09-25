@@ -4,8 +4,9 @@ from typing import List
 import csv
 import io
 from database import get_db
-from models import Team, Player
+from models import Team, Player, User
 from schemas import Team as TeamSchema, TeamCreate, TeamUpdate, TeamWithPlayers, TeamWithPlayerCount
+from auth import get_current_user
 
 router = APIRouter()
 
@@ -48,21 +49,35 @@ def get_team(team_id: int, db: Session = Depends(get_db)):
     return team
 
 @router.post("/", response_model=TeamSchema)
-def create_team(team: TeamCreate, db: Session = Depends(get_db)):
+def create_team(
+    team: TeamCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     db_team = Team(**team.dict())
+    # Track who created this team
+    db_team.modified_by = current_user.id
     db.add(db_team)
     db.commit()
     db.refresh(db_team)
     return db_team
 
 @router.put("/{team_id}", response_model=TeamSchema)
-def update_team(team_id: int, team: TeamUpdate, db: Session = Depends(get_db)):
+def update_team(
+    team_id: int,
+    team: TeamUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     db_team = db.query(Team).filter(Team.id == team_id).first()
     if db_team is None:
         raise HTTPException(status_code=404, detail="Team not found")
 
     for field, value in team.dict(exclude_unset=True).items():
         setattr(db_team, field, value)
+
+    # Track who modified this team
+    db_team.modified_by = current_user.id
 
     db.commit()
     db.refresh(db_team)

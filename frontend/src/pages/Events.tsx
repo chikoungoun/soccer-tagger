@@ -51,14 +51,20 @@ const Events: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // First get all completed fixtures and gameweeks
-      const [fixtures, gameweeksData] = await Promise.all([
-        fixturesApi.getAll(),
-        gameweeksApi.getAll()
-      ]);
-
+      // First get gameweeks
+      const gameweeksData = await gameweeksApi.getAll();
       setGameweeks(gameweeksData);
-      const completedFixtures = fixtures.filter(f => f.status === 'completed');
+
+      // Try to get fixtures, handling authentication and pagination
+      let completedFixtures: FixtureWithTeams[] = [];
+      try {
+        const fixturesResponse = await fixturesApi.getAll(undefined, 'completed', 1, 1000); // Get all completed fixtures
+        completedFixtures = fixturesResponse.fixtures;
+      } catch (fixturesError) {
+        console.error('Could not fetch fixtures (authentication may be required):', fixturesError);
+        setError('Failed to load fixtures data. Please ensure you are logged in.');
+        return;
+      }
 
       // Get events for each completed fixture
       const allEvents: Event[] = [];
@@ -74,7 +80,10 @@ const Events: React.FC = () => {
           const enrichedEvents = fixtureEvents.map(event => ({
             ...event,
             fixture,
-            team_name: event.team_id === fixture.home_team.id ? fixture.home_team.team_code_name : fixture.away_team.team_code_name,
+            // For now, we'll use the home team as default since we don't have direct team info from events API
+            // TODO: Enhance backend API to include team_id in event response
+            team_name: fixture.home_team.team_code_name,
+            team_id: fixture.home_team.id,
             gameweek_code: gameweek?.gameweek_code || 'N/A'
           }));
 

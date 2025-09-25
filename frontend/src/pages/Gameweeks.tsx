@@ -44,12 +44,17 @@ const Gameweeks: React.FC = () => {
 
   const fetchGameweeks = async () => {
     try {
-      const [gameweeksData, fixturesData] = await Promise.all([
-        gameweeksApi.getAll(),
-        fixturesApi.getAll()
-      ]);
+      const gameweeksData = await gameweeksApi.getAll();
       setGameweeks(gameweeksData);
-      setAllFixtures(fixturesData);
+
+      // Try to fetch fixtures, but don't fail if authentication is required
+      try {
+        const fixturesResponse = await fixturesApi.getAll(undefined, undefined, 1, 1000); // Get all fixtures
+        setAllFixtures(fixturesResponse.fixtures);
+      } catch (fixturesError) {
+        console.warn('Could not fetch fixtures (authentication may be required):', fixturesError);
+        setAllFixtures([]); // Set empty array if fixtures can't be fetched
+      }
     } catch (error) {
       console.error('Error fetching gameweeks:', error);
     } finally {

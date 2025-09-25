@@ -5,8 +5,9 @@ import csv
 import io
 from datetime import datetime
 from database import get_db
-from models import Player, Team
+from models import Player, Team, User
 from schemas import Player as PlayerSchema, PlayerCreate, PlayerUpdate
+from auth import get_current_user
 
 router = APIRouter()
 
@@ -26,7 +27,11 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
     return player
 
 @router.post("/", response_model=PlayerSchema)
-def create_player(player: PlayerCreate, db: Session = Depends(get_db)):
+def create_player(
+    player: PlayerCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     try:
         # Check if team exists
         team = db.query(Team).filter(Team.id == player.team_id).first()
@@ -52,6 +57,8 @@ def create_player(player: PlayerCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail=f"Position must be one of: {', '.join(valid_positions)}")
 
         db_player = Player(**player.dict())
+        # Track who created this player
+        db_player.modified_by = current_user.id
         db.add(db_player)
         db.commit()
         db.refresh(db_player)
@@ -63,7 +70,12 @@ def create_player(player: PlayerCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Error creating player: {str(e)}")
 
 @router.put("/{player_id}", response_model=PlayerSchema)
-def update_player(player_id: int, player_update: PlayerUpdate, db: Session = Depends(get_db)):
+def update_player(
+    player_id: int,
+    player_update: PlayerUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     db_player = db.query(Player).filter(Player.id == player_id).first()
     if db_player is None:
         raise HTTPException(status_code=404, detail="Player not found")
@@ -93,6 +105,9 @@ def update_player(player_id: int, player_update: PlayerUpdate, db: Session = Dep
 
     for field, value in update_data.items():
         setattr(db_player, field, value)
+
+    # Track who modified this player
+    db_player.modified_by = current_user.id
 
     db.commit()
     db.refresh(db_player)

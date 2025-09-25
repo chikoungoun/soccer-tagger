@@ -56,8 +56,16 @@ export const playersApi = {
 
 // Fixtures API
 export const fixturesApi = {
-  getAll: (teamId?: number, status?: string): Promise<FixtureWithTeams[]> => {
-    const params: any = {};
+  getAll: (teamId?: number, status?: string, page: number = 1, per_page: number = 20): Promise<{
+    fixtures: FixtureWithTeams[];
+    total: number;
+    page: number;
+    per_page: number;
+    pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  }> => {
+    const params: any = { page, per_page };
     if (teamId) params.team_id = teamId;
     if (status) params.status = status;
     return api.get('/fixtures/', { params }).then(res => res.data);

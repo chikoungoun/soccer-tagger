@@ -33,31 +33,40 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!isAuthenticated) return;
-
       try {
         setLoading(true);
-        const fixtures = await fixturesApi.getAll();
 
+        // Always fetch teams and players (no authentication required)
         let teams: Team[] = [];
         let players: Player[] = [];
-
-        // Only fetch teams and players for super_admin
-        if (user?.role === 'super_admin') {
+        try {
           [teams, players] = await Promise.all([
             teamsApi.getAll(),
             playersApi.getAll()
           ]);
+        } catch (error) {
+          console.warn('Could not fetch teams/players:', error);
+        }
+
+        // Try to fetch fixtures (requires authentication)
+        let fixturesData: FixtureWithTeams[] = [];
+        if (isAuthenticated) {
+          try {
+            const fixturesResponse = await fixturesApi.getAll(undefined, undefined, 1, 100); // Get first 100 fixtures
+            fixturesData = fixturesResponse.fixtures;
+          } catch (error) {
+            console.warn('Could not fetch fixtures:', error);
+          }
         }
 
         setStats({
           totalTeams: teams.length,
           totalPlayers: players.length,
-          totalFixtures: fixtures.length,
-          liveMatches: fixtures.filter(f => f.status === 'live').length
+          totalFixtures: isAuthenticated ? fixturesData.length : 0,
+          liveMatches: isAuthenticated ? fixturesData.filter(f => f.status === 'live').length : 0
         });
 
-        setRecentFixtures(fixtures.slice(0, 5));
+        setRecentFixtures(fixturesData.slice(0, 5));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {

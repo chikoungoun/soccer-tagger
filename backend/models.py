@@ -32,8 +32,11 @@ class Team(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who last modified this team
 
+    # Relationships
     players = relationship("Player", back_populates="team", cascade="all, delete-orphan")
+    modifier = relationship("User", foreign_keys=[modified_by])  # User who last modified this team
     home_fixtures = relationship("Fixture", foreign_keys="Fixture.home_team_id", back_populates="home_team")
     away_fixtures = relationship("Fixture", foreign_keys="Fixture.away_team_id", back_populates="away_team")
 
@@ -52,8 +55,11 @@ class Player(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who last modified this player
 
+    # Relationships
     team = relationship("Team", back_populates="players")
+    modifier = relationship("User", foreign_keys=[modified_by])  # User who last modified this player
 
 class Gameweek(Base):
     __tablename__ = "gameweeks"
@@ -85,8 +91,11 @@ class Fixture(Base):
     assigned_tagger_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL = available to anyone, user_id = assigned to specific tagger
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who last modified this fixture
 
+    # Relationships
     gameweek = relationship("Gameweek", back_populates="fixtures")
+    modifier = relationship("User", foreign_keys=[modified_by])  # User who last modified this fixture
     home_team = relationship("Team", foreign_keys=[home_team_id], back_populates="home_fixtures")
     away_team = relationship("Team", foreign_keys=[away_team_id], back_populates="away_fixtures")
     assigned_tagger = relationship("User", foreign_keys=[assigned_tagger_id])
@@ -122,10 +131,14 @@ class MatchEvent(Base):
     extra_info = Column(Text, nullable=True)  # Additional info like assist, reason for card, etc.
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who created the event
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())  # When event was last updated
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # User who last modified the event
 
+    # Relationships
     fixture = relationship("Fixture")
     player = relationship("Player")
-    creator = relationship("User")
+    creator = relationship("User", foreign_keys=[created_by])  # User who created the event
+    modifier = relationship("User", foreign_keys=[modified_by])  # User who last modified the event
 
 class MatchTimer(Base):
     __tablename__ = "match_timers"

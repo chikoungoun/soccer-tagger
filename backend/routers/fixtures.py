@@ -1,20 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import func
 from typing import List
+import math
 from database import get_db
 from models import Fixture, Team, User
-from schemas import Fixture as FixtureSchema, FixtureCreate, FixtureUpdate, FixtureWithTeams
+from schemas import Fixture as FixtureSchema, FixtureCreate, FixtureUpdate, FixtureWithTeams, PaginatedFixtures
 from auth import get_current_active_user, require_tagger_or_admin, require_super_admin
 from utils.notification_manager import NotificationManager
 
 router = APIRouter()
 
-@router.get("/", response_model=List[FixtureWithTeams])
-def get_fixtures(skip: int = 0, limit: int = 100, team_id: int = None, status: str = None, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
+@router.get("/", response_model=PaginatedFixtures)
+def get_fixtures(
+    page: int = 1,
+    per_page: int = 20,  # Reduced default from 100 to 20 for better performance
+    team_id: int = None,
+    status: str = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_tagger_or_admin)
+):
+    """Get paginated list of fixtures"""
+    # Calculate offset from page number
+    skip = (page - 1) * per_page
+
+    # Use selectinload for better performance with multiple fixtures
     query = db.query(Fixture).options(
-        joinedload(Fixture.home_team),
-        joinedload(Fixture.away_team),
-        joinedload(Fixture.assigned_tagger)
+        selectinload(Fixture.home_team),
+        selectinload(Fixture.away_team),
+        selectinload(Fixture.assigned_tagger)
     )
 
     # Filter fixtures based on user role and assignment
@@ -33,8 +47,26 @@ def get_fixtures(skip: int = 0, limit: int = 100, team_id: int = None, status: s
     if status:
         query = query.filter(Fixture.status == status)
 
-    fixtures = query.order_by(Fixture.match_date.desc()).offset(skip).limit(limit).all()
-    return fixtures
+    # Get total count for pagination
+    total = query.count()
+
+    # Get fixtures for current page
+    fixtures = query.order_by(Fixture.match_date.desc()).offset(skip).limit(per_page).all()
+
+    # Calculate pagination metadata
+    pages = math.ceil(total / per_page) if total > 0 else 1
+    has_next = page < pages
+    has_prev = page > 1
+
+    return PaginatedFixtures(
+        fixtures=fixtures,
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages,
+        has_next=has_next,
+        has_prev=has_prev
+    )
 
 @router.get("/{fixture_id}", response_model=FixtureWithTeams)
 def get_fixture(fixture_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_tagger_or_admin)):
@@ -72,6 +104,8 @@ def create_fixture(
         raise HTTPException(status_code=400, detail="A team cannot play against itself")
 
     db_fixture = Fixture(**fixture.dict())
+    # Track who created this fixture
+    db_fixture.modified_by = current_user.id
     db.add(db_fixture)
     db.commit()
     db.refresh(db_fixture)
@@ -89,7 +123,12 @@ def create_fixture(
     return db_fixture
 
 @router.put("/{fixture_id}", response_model=FixtureSchema)
-def update_fixture(fixture_id: int, fixture_update: FixtureUpdate, db: Session = Depends(get_db)):
+def update_fixture(
+    fixture_id: int,
+    fixture_update: FixtureUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     db_fixture = db.query(Fixture).filter(Fixture.id == fixture_id).first()
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
@@ -97,6 +136,9 @@ def update_fixture(fixture_id: int, fixture_update: FixtureUpdate, db: Session =
     update_data = fixture_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_fixture, field, value)
+
+    # Track who modified this fixture
+    db_fixture.modified_by = current_user.id
 
     db.commit()
     db.refresh(db_fixture)

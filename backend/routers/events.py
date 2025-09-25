@@ -501,6 +501,8 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
     event.minute = event_data.minute
     event.half = event_data.half
     event.extra_info = event_data.extra_info
+    # Track who modified this event
+    event.modified_by = current_user.id
 
     # Handle red card logic
     if event_data.event_type == "red_card" and old_event_type != "red_card":
