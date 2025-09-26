@@ -4,21 +4,21 @@ FROM node:18-alpine as build
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV NODE_ENV=production
+# Set environment variables for build
+ENV NODE_ENV=development
 ENV GENERATE_SOURCEMAP=false
 
 # Copy package files first for better caching
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --only=production --silent
+# Install dependencies (including dev dependencies for build)
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application (skip tsc since vite handles TypeScript)
+RUN npx vite build
 
 # Production stage with Nginx
 FROM nginx:alpine

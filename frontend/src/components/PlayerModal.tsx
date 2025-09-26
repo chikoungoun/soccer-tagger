@@ -31,7 +31,7 @@ const PlayerModal: React.FC<PlayerModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<CreatePlayerData>({
     name: '',
-    jersey_number: 1,
+    jersey_number: undefined,
     position: 'MF',
     age: undefined,
     birth_date: '',
@@ -64,7 +64,7 @@ const PlayerModal: React.FC<PlayerModalProps> = ({
       // Reset form for new player
       setFormData({
         name: '',
-        jersey_number: 1,
+        jersey_number: undefined,
         position: 'MF',
         age: undefined,
         birth_date: '',
@@ -132,8 +132,10 @@ const PlayerModal: React.FC<PlayerModalProps> = ({
   const handleChange = (name: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'jersey_number' || name === 'age' || name === 'team_id'
-        ? (value ? parseInt(value) : (name === 'jersey_number' ? 1 : undefined))
+      [name]: name === 'jersey_number'
+        ? (value && value.trim() !== '' ? parseInt(value) : undefined)
+        : name === 'age' || name === 'team_id'
+        ? (value ? parseInt(value) : undefined)
         : name === 'is_active' ? value : value
     }));
 
@@ -306,10 +308,11 @@ const PlayerModal: React.FC<PlayerModalProps> = ({
                   <Input
                     id="jersey_number"
                     name="jersey_number"
-                    type="number"
-                    min="1"
-                    max="99"
-                    value={formData.jersey_number}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Enter jersey number (1-99)"
+                    value={formData.jersey_number || ''}
                     onChange={(e) => handleChange('jersey_number', e.target.value)}
                     className={errors.jersey_number ? 'border-red-500 focus-visible:ring-red-500' : ''}
                   />

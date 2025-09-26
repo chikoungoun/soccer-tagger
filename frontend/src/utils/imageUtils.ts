@@ -6,6 +6,6 @@ export const getImageUrl = (imagePath: string | undefined | null): string => {
     return imagePath;
   }
 
-  // Convert relative path to full backend URL
-  return `http://localhost:8000${imagePath}`;
+  // Convert relative path to use frontend proxy
+  return `/api${imagePath}`;
 };

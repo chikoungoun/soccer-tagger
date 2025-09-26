@@ -14,6 +14,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline';
 import { fixturesApi, lineupsApi, eventsApi } from '../utils/api';
+import { getImageUrl } from '../utils/imageUtils';
 import { FixtureWithTeams, FixtureWithLineups, TeamLineup } from '../types';
 import MatchTimer from '../components/MatchTimer';
 import EventTagger from '../components/EventTagger';
@@ -372,7 +373,7 @@ const MatchCenter: React.FC = () => {
                 <div className="flex items-center justify-center lg:justify-end space-x-4 mb-3">
                   {fixture.home_team.logo_url && (
                     <img
-                      src={`http://localhost:8000${fixture.home_team.logo_url}`}
+                      src={getImageUrl(fixture.home_team.logo_url)}
                       alt={`${fixture.home_team.name} logo`}
                       className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full border-2 border-white/30 bg-white shadow-lg"
                     />
@@ -416,7 +417,7 @@ const MatchCenter: React.FC = () => {
                   <h2 className="text-4xl font-bold">{fixture.away_team.name}</h2>
                   {fixture.away_team.logo_url && (
                     <img
-                      src={`http://localhost:8000${fixture.away_team.logo_url}`}
+                      src={getImageUrl(fixture.away_team.logo_url)}
                       alt={`${fixture.away_team.name} logo`}
                       className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full border-2 border-white/30 bg-white shadow-lg"
                     />
