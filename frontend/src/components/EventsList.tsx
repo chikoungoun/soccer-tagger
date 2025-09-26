@@ -9,9 +9,12 @@ import {
   ShieldCheckIcon,
   TrashIcon,
   PencilIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  CheckCircleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
-import { eventsApi } from '../utils/api';
+import { eventsApi, rewardsApi } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface MatchEvent {
   id: number;
@@ -27,6 +30,7 @@ interface MatchEvent {
   created_by: number | null;
   tagger_name: string;
   created_at: string;
+  is_admin_corrected?: boolean;
 }
 
 interface TeamLineup {
@@ -99,6 +103,7 @@ const eventLabels: Record<string, string> = {
 const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, awayTeamLineup, refreshTrigger, onEventDeleted, onEventEdit }) => {
   const [events, setEvents] = useState<MatchEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchEvents();
@@ -138,6 +143,50 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
       console.error('Error deleting event:', error);
       const errorMessage = error.response?.data?.detail || 'Failed to delete event';
       alert(`Error deleting event: ${errorMessage}`);
+    }
+  };
+
+  const correctEvent = async (event: MatchEvent) => {
+    if (!confirm(`Mark this event as corrected?\n\nThis will apply a penalty to the tagger "${event.tagger_name}" and recalculate their reward for this match.`)) {
+      return;
+    }
+
+    try {
+      // Mark the specific event as corrected
+      const result = await rewardsApi.markEventCorrected(event.id);
+
+      // Show detailed success message
+      alert(`Event marked as corrected!\n\nPenalty applied to ${event.tagger_name}:\n- New accuracy: ${result.new_accuracy.toFixed(1)}%\n- New reward: $${result.new_reward.toFixed(2)}`);
+
+      // Refresh events to show visual changes
+      fetchEvents();
+    } catch (error: any) {
+      console.error('Error marking event as corrected:', error);
+      console.log('Full error response:', error.response);
+      console.log('Error response data:', error.response?.data);
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Failed to mark event as corrected';
+      alert(`Error: ${errorMessage}\n\nFull response: ${JSON.stringify(error.response?.data)}`);
+    }
+  };
+
+  const uncorrectEvent = async (event: MatchEvent) => {
+    if (!confirm(`Remove correction from this event?\n\nThis will restore the tagger "${event.tagger_name}"'s reward for this match.`)) {
+      return;
+    }
+
+    try {
+      // Remove the correction from the event
+      const result = await rewardsApi.uncorrectEvent(event.id);
+
+      // Show detailed success message
+      alert(`Correction removed!\n\nReward restored for ${event.tagger_name}:\n- New accuracy: ${result.new_accuracy.toFixed(1)}%\n- New reward: $${result.new_reward.toFixed(2)}`);
+
+      // Refresh events to show visual changes
+      fetchEvents();
+    } catch (error: any) {
+      console.error('Error removing correction:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to remove correction';
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -245,8 +294,19 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
             return (
               <div
                 key={event.id}
-                className={`p-4 rounded-lg border border-gray-200 ${colors.bg} transition-all duration-200 hover:shadow-md`}
+                className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+                  event.is_admin_corrected
+                    ? 'border-orange-300 bg-orange-50/30'
+                    : `border-gray-200 ${colors.bg}`
+                }`}
               >
+                {event.is_admin_corrected && (
+                  <div className="flex items-center space-x-2 mb-3 px-3 py-2 bg-orange-100 border border-orange-300 rounded-lg">
+                    <CheckCircleIcon className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800">Admin Corrected</span>
+                    <span className="text-xs text-orange-600">Penalty applied to {event.tagger_name}</span>
+                  </div>
+                )}
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
@@ -311,16 +371,33 @@ const EventsList: React.FC<EventsListProps> = ({ fixtureId, homeTeamLineup, away
                   </div>
 
                   <div className="flex items-center space-x-1">
+                    {user?.role === 'super_admin' && event.created_by && event.created_by !== user.id && (
+                      <button
+                        onClick={() => event.is_admin_corrected ? uncorrectEvent(event) : correctEvent(event)}
+                        className={`flex-shrink-0 p-1 transition-colors rounded-full ${
+                          event.is_admin_corrected
+                            ? 'text-red-600 bg-red-100 hover:text-red-700 hover:bg-red-200'
+                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                        }`}
+                        title={event.is_admin_corrected ? "Remove correction (restore reward)" : "Mark as corrected (applies penalty)"}
+                      >
+                        {event.is_admin_corrected ? (
+                          <XMarkIcon className="h-4 w-4" />
+                        ) : (
+                          <CheckCircleIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
                     <button
                       onClick={() => onEventEdit && onEventEdit(event)}
-                      className="flex-shrink-0 p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                      className="flex-shrink-0 p-1 text-gray-400 hover:text-blue-600 transition-colors rounded"
                       title="Edit event"
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => deleteEvent(event.id)}
-                      className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 transition-colors rounded"
                       title="Delete event"
                     >
                       <TrashIcon className="h-4 w-4" />

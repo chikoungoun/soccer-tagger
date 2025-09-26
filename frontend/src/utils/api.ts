@@ -238,4 +238,32 @@ export const rewardsApi = {
     total_events_logged: number;
     total_corrections: number;
   }[]> => api.get('/rewards/all-users-performance').then(res => res.data),
+
+  calculateMatchRewards: (fixtureId: number): Promise<{
+    fixture_id: number;
+    rewards: {
+      tagger_id: number;
+      final_reward: number;
+      accuracy_percentage: number;
+      events_logged: number;
+      total_errors: number;
+    }[];
+    message: string;
+  }> => api.post(`/rewards/match/${fixtureId}/calculate`, {}).then(res => res.data),
+
+  markEventCorrected: (eventId: number): Promise<{
+    message: string;
+    event_id: number;
+    tagger_id: number;
+    new_accuracy: number;
+    new_reward: number;
+  }> => api.post(`/rewards/event/${eventId}/mark-corrected`, {}).then(res => res.data),
+
+  uncorrectEvent: (eventId: number): Promise<{
+    message: string;
+    event_id: number;
+    tagger_id: number;
+    new_accuracy: number;
+    new_reward: number;
+  }> => api.post(`/rewards/event/${eventId}/remove-correction`, {}).then(res => res.data),
 };

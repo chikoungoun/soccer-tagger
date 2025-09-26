@@ -222,7 +222,7 @@ const Rewards: React.FC = () => {
             <CardDescription>Your tagging statistics and earnings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
                   <CurrencyDollarIcon className="h-8 w-8 text-white" />
@@ -251,16 +251,6 @@ const Rewards: React.FC = () => {
                   {userPerformance.matches_tagged}
                 </p>
                 <p className="text-sm text-gray-600">Matches Tagged</p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <ChartBarIcon className="h-8 w-8 text-white" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">
-                  {userPerformance.total_events_logged}
-                </p>
-                <p className="text-sm text-gray-600">Events Logged</p>
               </div>
             </div>
 

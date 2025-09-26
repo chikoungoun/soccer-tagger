@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build: ./backend
+    container_name: soccer-manager-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./soccer_manager.db
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      # Persist database and uploads
+      - ./backend/soccer_manager.db:/app/soccer_manager.db
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - soccer-network
+
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    container_name: soccer-manager-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - soccer-network
+
+networks:
+  soccer-network:
+    driver: bridge
+    name: soccer-manager-network
+
+volumes:
+  soccer_db:
+    driver: local
+  soccer_uploads:
+    driver: local
