@@ -153,6 +153,7 @@ class EventResponse(BaseModel):
     created_by: Optional[int]
     tagger_name: Optional[str]
     created_at: datetime
+    is_admin_corrected: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -441,7 +442,8 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         extra_info=db_event.extra_info,
         created_by=db_event.created_by,
         tagger_name=current_user.username,
-        created_at=db_event.created_at
+        created_at=db_event.created_at,
+        is_admin_corrected=db_event.is_admin_corrected or False
     )
 
 @router.get("/fixtures/{fixture_id}/events", response_model=List[EventResponse])
@@ -470,7 +472,8 @@ async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
             extra_info=event.extra_info,
             created_by=event.created_by,
             tagger_name=event.creator.username if event.creator else "Unknown",
-            created_at=event.created_at
+            created_at=event.created_at,
+            is_admin_corrected=event.is_admin_corrected or False
         )
         for event in events
     ]
@@ -596,7 +599,8 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         extra_info=event.extra_info,
         created_by=event.created_by,
         tagger_name=creator.username if creator else "Unknown",
-        created_at=event.created_at
+        created_at=event.created_at,
+        is_admin_corrected=event.is_admin_corrected or False
     )
 
 @router.delete("/events/{event_id}")

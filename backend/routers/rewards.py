@@ -3,6 +3,7 @@ Rewards router - Handles tagger reward calculation and tracking
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from typing import List, Optional
 from database import get_db
 from auth import get_current_active_user, require_super_admin, require_tagger_or_admin
@@ -106,6 +107,144 @@ async def get_tagger_match_history(
         })
 
     return match_history
+
+@router.get("/test")
+async def test_rewards_endpoint():
+    """Test endpoint to verify rewards router is working"""
+    return {"message": "Rewards router is working", "endpoint": "test"}
+
+@router.post("/event/{event_id}/mark-corrected")
+async def mark_event_corrected(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Mark an event as corrected by admin, applying penalty to tagger"""
+    # Get the event
+    event = db.query(MatchEvent).filter(MatchEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    if not event.created_by:
+        raise HTTPException(status_code=400, detail="Event has no tagger to penalize")
+
+    if event.created_by == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot correct your own event")
+
+    if event.is_admin_corrected:
+        raise HTTPException(status_code=400, detail="Event already marked as corrected")
+
+    # Log the correction
+    reward_service = RewardService(db)
+    reward_service.log_event_edit(
+        event_id=event.id,
+        original_tagger_id=event.created_by,
+        editor_id=current_user.id,
+        edit_type="correction",
+        field_changed="admin_correction",
+        old_value="Not corrected",
+        new_value="Marked as corrected by admin",
+        correction_reason="Manual admin correction via correct button",
+        severity="minor"
+    )
+
+    # Mark event as corrected
+    event.is_admin_corrected = True
+    event.admin_correction_reason = "Manual admin correction via correct button"
+    db.commit()
+
+    # Recalculate reward
+    reward = reward_service.create_or_update_match_reward(event.fixture_id, event.created_by)
+
+    return {
+        'message': 'Event marked as corrected and penalty applied',
+        'event_id': event_id,
+        'tagger_id': event.created_by,
+        'new_accuracy': reward.accuracy_percentage,
+        'new_reward': reward.final_reward
+    }
+
+@router.post("/event/{event_id}/remove-correction")
+async def uncorrect_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Remove correction from an event, restoring tagger's reward"""
+    # Get the event
+    event = db.query(MatchEvent).filter(MatchEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    if not event.is_admin_corrected:
+        raise HTTPException(status_code=400, detail="Event is not marked as corrected")
+
+    if not event.created_by:
+        raise HTTPException(status_code=400, detail="Event has no tagger")
+
+    # Remove the correction
+    event.is_admin_corrected = False
+    event.admin_correction_reason = None
+
+    # Remove all edit logs for this event with "correction" type
+    reward_service = RewardService(db)
+    edit_logs = db.query(EventEditLog).filter(
+        and_(
+            EventEditLog.event_id == event_id,
+            EventEditLog.edit_type == "correction"
+        )
+    ).all()
+
+    for log in edit_logs:
+        db.delete(log)
+
+    db.commit()
+
+    # Recalculate reward
+    reward = reward_service.create_or_update_match_reward(event.fixture_id, event.created_by)
+
+    return {
+        'message': 'Correction removed and reward restored',
+        'event_id': event_id,
+        'tagger_id': event.created_by,
+        'new_accuracy': reward.accuracy_percentage,
+        'new_reward': reward.final_reward
+    }
+
+@router.post("/match/{fixture_id}/calculate")
+async def calculate_match_rewards(
+    fixture_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Calculate/recalculate rewards for all taggers who worked on this match"""
+    reward_service = RewardService(db)
+
+    # Get all taggers who worked on this match
+    tagger_ids = db.query(MatchEvent.created_by).filter(
+        and_(
+            MatchEvent.fixture_id == fixture_id,
+            MatchEvent.created_by.isnot(None)
+        )
+    ).distinct().all()
+
+    calculated_rewards = []
+    for (tagger_id,) in tagger_ids:
+        if tagger_id:
+            reward = reward_service.create_or_update_match_reward(fixture_id, tagger_id)
+            calculated_rewards.append({
+                'tagger_id': tagger_id,
+                'final_reward': reward.final_reward,
+                'accuracy_percentage': reward.accuracy_percentage,
+                'events_logged': reward.events_logged,
+                'total_errors': reward.admin_corrections + reward.events_added_by_admin + reward.events_removed_by_admin
+            })
+
+    return {
+        'fixture_id': fixture_id,
+        'rewards': calculated_rewards,
+        'message': f'Calculated rewards for {len(calculated_rewards)} taggers'
+    }
 
 @router.post("/match/{fixture_id}/finalize")
 async def finalize_match_rewards(
