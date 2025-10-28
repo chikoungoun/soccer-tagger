@@ -146,6 +146,7 @@ class EventResponse(BaseModel):
     player_name: str
     player_position: str
     player_birth_date: Optional[date]
+    team_code: Optional[str]
     event_type: str
     minute: int
     half: int
@@ -340,7 +341,7 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         raise HTTPException(status_code=404, detail="Fixture not found")
 
     # Validate player exists
-    player = db.query(Player).filter(Player.id == event.player_id).first()
+    player = db.query(Player).options(joinedload(Player.team)).filter(Player.id == event.player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
 
@@ -436,6 +437,7 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
         player_name=player.name,
         player_position=player.position,
         player_birth_date=player.birth_date,
+        team_code=player.team.team_code_name if player.team else None,
         event_type=db_event.event_type,
         minute=db_event.minute,
         half=db_event.half,
@@ -450,7 +452,7 @@ async def create_event(fixture_id: int, event: CreateEventRequest, db: Session =
 async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
     """Get all events for a fixture, ordered by when they were recorded (created_at timestamp)"""
     events = db.query(MatchEvent).options(
-        joinedload(MatchEvent.player),
+        joinedload(MatchEvent.player).joinedload(Player.team),
         joinedload(MatchEvent.creator)
     ).filter(
         MatchEvent.fixture_id == fixture_id
@@ -466,6 +468,7 @@ async def get_fixture_events(fixture_id: int, db: Session = Depends(get_db)):
             player_name=event.player.name,
             player_position=event.player.position,
             player_birth_date=event.player.birth_date,
+            team_code=event.player.team.team_code_name if event.player and event.player.team else None,
             event_type=event.event_type,
             minute=event.minute,
             half=event.half,
@@ -486,7 +489,7 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         raise HTTPException(status_code=404, detail="Event not found")
 
     # Validate player exists
-    player = db.query(Player).filter(Player.id == event_data.player_id).first()
+    player = db.query(Player).options(joinedload(Player.team)).filter(Player.id == event_data.player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
 
@@ -543,8 +546,8 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
 
     # Handle goal scoring changes
     fixture = db.query(Fixture).filter(Fixture.id == event.fixture_id).first()
-    old_player = db.query(Player).filter(Player.id == old_player_id).first()
-    new_player = db.query(Player).filter(Player.id == event_data.player_id).first()
+    old_player = db.query(Player).options(joinedload(Player.team)).filter(Player.id == old_player_id).first()
+    new_player = db.query(Player).options(joinedload(Player.team)).filter(Player.id == event_data.player_id).first()
 
     if fixture and old_player and new_player:
         # Handle removal of old goal (if it was a goal)
@@ -593,6 +596,7 @@ async def update_event(event_id: int, event_data: CreateEventRequest, db: Sessio
         player_name=player.name,
         player_position=player.position,
         player_birth_date=player.birth_date,
+        team_code=player.team.team_code_name if player and player.team else None,
         event_type=event.event_type,
         minute=event.minute,
         half=event.half,

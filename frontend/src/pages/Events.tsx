@@ -22,14 +22,13 @@ interface Event {
   event_type: string;
   minute: number;
   player_id?: number;
-  team_id: number;
+  team_code?: string;
   description?: string;
   created_by?: number;
   tagger_name?: string;
   created_at: string;
   fixture: FixtureWithTeams;
   player_name?: string;
-  team_name: string;
   gameweek_code: string;
 }
 
@@ -77,15 +76,16 @@ const Events: React.FC = () => {
           const gameweek = gameweeksData.find(gw => gw.id === fixture.gameweek_id);
 
           // Add fixture, team, and gameweek info to each event
-          const enrichedEvents = fixtureEvents.map(event => ({
-            ...event,
-            fixture,
-            // For now, we'll use the home team as default since we don't have direct team info from events API
-            // TODO: Enhance backend API to include team_id in event response
-            team_name: fixture.home_team.team_code_name,
-            team_id: fixture.home_team.id,
-            gameweek_code: gameweek?.gameweek_code || 'N/A'
-          }));
+          const enrichedEvents = fixtureEvents.map(event => {
+            const teamCode = event.team_code || fixture.home_team.team_code_name;
+
+            return {
+              ...event,
+              fixture,
+              team_code: teamCode,
+              gameweek_code: gameweek?.gameweek_code || 'N/A'
+            };
+          });
 
           allEvents.push(...enrichedEvents);
         } catch (error) {
@@ -482,11 +482,11 @@ const Events: React.FC = () => {
                             <div className="flex items-center space-x-2">
                               <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
                                 <span className="text-white text-xs font-bold">
-                                  {event.team_name.substring(0, 1).toUpperCase()}
+                                  {(event.team_code || '?').substring(0, 1).toUpperCase()}
                                 </span>
                               </div>
                               <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
-                                {event.team_name}
+                                {event.team_code || 'N/A'}
                               </span>
                             </div>
                           </td>
@@ -622,3 +622,4 @@ const Events: React.FC = () => {
 };
 
 export default Events;
+
